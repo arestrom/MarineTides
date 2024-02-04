@@ -1,0 +1,25 @@
+Package: MarineTides
+Type: Package
+Title: Tide Prediction
+Version: 0.1.9000
+Authors@R: as.person("Are Strom <are.strom@gmail.com> [aut, cre]")
+Maintainer: Are Strom <are.strom@gmail.com>
+Description: Generates tide predictions using harmonics data obtained from the NOAA CO-OPS
+    API at: https://api.tidesandcurrents.noaa.gov/api/prod/. Tide times and levels can be
+    calculated for both primary Harmonic reference stations, as well as Subordinate stations.
+    Combined, the harmonics data, and subordinate offset data, allows for predicting tides
+    at 3337 locations worldwide. This includes stations adjacent to United States Pacific Ocean
+    and Caribbean territories. Additional data related to annual changes in tidal gravitatonal
+    forces were obtained from David Flater, creator of XTide. The code to calculate tide data
+    was in part adapted from the rtide package, which in turn was derived from XTide. 
+URL: https://github.com/arestrom/MarineTides
+BugReports: https://github.com/arestrom/MarineTides/issues
+Depends: R (>= 4.3.1)
+Imports:
+    anytime (>= 0.3.9),
+    data.table (>= 1.14.99),
+    glue (>= 1.7.0)
+License: GPL-3 + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.1
