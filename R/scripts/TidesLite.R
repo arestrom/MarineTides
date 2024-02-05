@@ -1,7 +1,7 @@
 #====================================================================================
-# Create functions for MarineTides package
+# Core functions for MarineTides package
 #
-# Notes: 
+# Notes:
 #  1. For this version update to have all timezones come from station data: -- Done
 #  2. See if I can get no differences with NOAA by adding a 30-sec option: --Did not improve
 #  3. Use Sys.date as default: --Done
@@ -12,6 +12,7 @@
 #     Possibly time from HL function, then spline?
 #  2. Create a tide calendar function?
 #  3. Create a colored, clickable squares, annual calendar function?
+#  4. See if I can dump start and end dates from harmonic_tides()
 #
 # AS 2024-02-03
 #====================================================================================
@@ -103,7 +104,7 @@ get_reference_station = function(station_code, verbose, harms = harmonics) {
       cat(glue::glue("{station_name} is a subordinate station. Tide levels are", "\n ",
                      "calculated from {ref_station_name} harmonic constituents at one minute", "\n ",
                      "increments. Values for high and low tide are extracted, then time and", "\n ",
-                     "height corrections from {ref_station_name} are applied to the {station_name} ", "\n ", 
+                     "height corrections from {ref_station_name} are applied to the {station_name} ", "\n ",
                      "predictions."), "\n\n")
     }
   }
@@ -113,16 +114,16 @@ get_reference_station = function(station_code, verbose, harms = harmonics) {
 # Function to generate prediction span vector
 get_prediction_range = function(start_date, end_date, pred_inc, timezone) {
   start = ISOdatetime(
-    year = data.table::year(start_date), 
+    year = data.table::year(start_date),
     month = data.table::month(start_date),
-    day = data.table::mday(start_date), 
-    hour = 0, min = 0, sec = 0, 
+    day = data.table::mday(start_date),
+    hour = 0, min = 0, sec = 0,
     tz = timezone)
   end = ISOdatetime(
-    year = data.table::year(end_date), 
+    year = data.table::year(end_date),
     month = data.table::month(end_date),
-    day = data.table::mday(end_date), 
-    hour = 23, min = 59, sec = 59, 
+    day = data.table::mday(end_date),
+    hour = 23, min = 59, sec = 59,
     tz = timezone)
     pred_span = seq(start, end, by = paste(pred_inc, "min"))
   attr(pred_span, "tzone") = "UTC"
@@ -140,13 +141,13 @@ hours_from_newyear <- function(datetime) {
 
 # Function to get range of years in dts
 get_year_range = function(start_date, end_date) {
-  year_rng = c(data.table::year(start_date), 
-               data.table::year(end_date)) |> 
-    unique() |> 
+  year_rng = c(data.table::year(start_date),
+               data.table::year(end_date)) |>
+    unique() |>
     as.integer()
 }
 
-# Function to find peaks from: 
+# Function to find peaks from:
 # https://stats.stackexchange.com/questions/22974/how-to-find-local-peaks-valleys-in-a-series-of-data
 find_peaks = function (x, m = 3){
   shape = diff(sign(diff(x, na.pad = FALSE)))
@@ -165,7 +166,7 @@ find_peaks = function (x, m = 3){
 harmonic_tides = function(station_code, station_info,
                           start_date, end_date,
                           prediction_dts,
-                          timezone, 
+                          timezone,
                           verbose,
                           harms) {
   # Convert harmonics data to DT...maybe preconfigure in harms?
@@ -187,12 +188,12 @@ harmonic_tides = function(station_code, station_info,
   # Pull out year constants
   year_range = get_year_range(start_date, end_date)
   yr_dat = yrconsts_dt[node_year %in% year_range & order %in% consts[,order]]
-  yr_args = data.table(node_year = year_range, 
+  yr_args = data.table(node_year = year_range,
                        year_factor = NA_real_,
                        equil_arg = NA_real_)
-  for (i in seq_along(year_range) ) yr_args$year_factor[i] = 
+  for (i in seq_along(year_range) ) yr_args$year_factor[i] =
     list(yr_dat$year_factor[yr_dat$node_year == year_range[i]])
-  for (i in seq_along(year_range) ) yr_args$equil_arg[i] = 
+  for (i in seq_along(year_range) ) yr_args$equil_arg[i] =
     list(yr_dat$equil_arg[yr_dat$node_year == year_range[i]])
   td_hts = data.table(tide_time = prediction_dts, datum = datum, meridian = meridian)
   set(td_hts, j = "amplitude", value = list(amplitude))
@@ -213,13 +214,13 @@ harmonic_tides = function(station_code, station_info,
                         reference_station_code = station_info[[1]],
                         station_type = station_info[[2]],
                         tide_type = "P",
-                        tide_time = td_hts$tide_time, 
+                        tide_time = td_hts$tide_time,
                         tide_level = td_hts$tide_height)
   attr(tide_hts$tide_time, "tzone") = timezone
   return(tide_hts)
 }
 
-# Function to generate high_low tide values. 
+# Function to generate high_low tide values.
 # Ok to dump first values...will use date buffers for subordinate stations
 high_low_tides = function(tide_pred, data_interval, tide_station) {
   tide_pred = data.table(tide_pred)
@@ -227,7 +228,7 @@ high_low_tides = function(tide_pred, data_interval, tide_station) {
   low_peaks = find_peaks(-tide_pred$tide_level, m = 5)
   # Assign H and L values to tide_level using find_peaks()
   for ( i in seq_along(tide_pred$tide_time) ) {
-    set(tide_pred, i, j = "tide_type", 
+    set(tide_pred, i, j = "tide_type",
         value = if ( i %in% high_peaks ) {"H"} else if (i %in% low_peaks) {"L"} else {"P"})
   }
   if ( data_interval == "high-only" ) {
@@ -251,18 +252,18 @@ subordinate_tides = function(hl_tides, harms) {
                                   offset_level = tide_level * height_offset_factor_high_tide)]
   tide_hl[tide_type == "L", ':=' (offset_time = tide_time + (time_offset_low_tide_minutes * 60),
                                   offset_level = tide_level * height_offset_factor_low_tide)]
-  tide_hl = tide_hl[, .(station_code, station_name, reference_station_code, tide_type, 
+  tide_hl = tide_hl[, .(station_code, station_name, reference_station_code, tide_type,
                         tide_time = offset_time, tide_level = offset_level)]
   return(tide_hl)
 }
 
 # Initial wrapper function
-tide_level = function(tide_station, 
-                      start_date = Sys.Date(), 
+tide_level = function(tide_station,
+                      start_date = Sys.Date(),
                       end_date = Sys.Date() + 1,
                       data_interval = "15-min",
                       timezone = NULL,
-                      verbose = FALSE, 
+                      verbose = FALSE,
                       harms = harmonics) {
   # Get station info
   station_code = identify_station(tide_station)
@@ -271,7 +272,7 @@ tide_level = function(tide_station,
   } else {
     station_info = get_reference_station(station_code, verbose)
   }
-  if ( !data_interval %in% c("1-min", "6-min", "15-min", "30-min", "60-min", 
+  if ( !data_interval %in% c("1-min", "6-min", "15-min", "30-min", "60-min",
                              "high-low", "high-only", "low-only") ) {
     stop(glue::glue("Please select one of the allowable options for data_interval:\n ",
                     "1-min, 6-min, 15-min, 30-min, 60-min, high-low, high-only, low-only"))
@@ -286,8 +287,8 @@ tide_level = function(tide_station,
   # May not need final_dts
   if ( is.null(timezone) ) {
     timezone = station_info[[3]]
-  }  
-  start_date = anytime::anydate(start_date) 
+  }
+  start_date = anytime::anydate(start_date)
   end_date = anytime::anydate(end_date)
   if ( verbose == TRUE ) {
     cat(glue::glue("\nTides will be predicted from {start_date} to {end_date}\n\n"))
@@ -309,7 +310,7 @@ tide_level = function(tide_station,
                              station_info,
                              start_date, end_date,
                              prediction_dts,
-                             timezone, 
+                             timezone,
                              verbose,
                              harms)
   # Generate high_low values for subordinate stations or harmonic stations where high_low requested
@@ -323,8 +324,8 @@ tide_level = function(tide_station,
     tide_out = hl_tides
   } else if (station_info[[2]] == "H" & data_interval %in% c("1-min", "6-min", "15-min", "30-min", "60-min") ) {
     tide_pred = data.table(tide_pred)
-    tide_pred = tide_pred[, .(station_code, station_name, 
-                              reference_station_code, 
+    tide_pred = tide_pred[, .(station_code, station_name,
+                              reference_station_code,
                               tide_type, tide_time, tide_level)]
     tide_out = tide_pred
   }
@@ -460,7 +461,7 @@ nd = Sys.time(); nd - tm  # 18.34023 secs
 # #         Issue is probably with rounding of datetime values.
 # #         Times differed by one minute in 10% of cases over 2024
 # #====================================================================
-# 
+#
 # # Get all low tides for Seattle for year 2024
 # qry = glue("select loc.location_name as tide_station, td.low_tide_datetime as ps_tide_time, ",
 #            "td.tide_height_feet as ps_tide_level, st.tide_strata_code as tide_strata ",
@@ -473,27 +474,27 @@ nd = Sys.time(); nd - tm  # 18.34023 secs
 # pg_con = pg_con_local(dbname = "ps_shellfish")
 # ps_year_24 = dbGetQuery(pg_con, qry)
 # dbDisconnect(pg_con)
-# 
+#
 # # Convert to meters
 # ps_year_24 = data.table(ps_year_24)
 # ps_year_24 = ps_year_24[, ':=' (ps_tide_level = ps_tide_level / 3.28084)]
 # attr(ps_year_24$ps_tide_time, "tzone") = "America/Los_Angeles"
 # ps_year_24 = ps_year_24[2:nrow(ps_year_24),]
-# 
+#
 # # # Simplest way to truncate without the dependencies:
 # # (x = as.POSIXct(Sys.time()))
 # # (xx = round(x, "mins"))
 # # (y = as.POSIXct(format(x, "%Y-%m-%d %H:%M:00")))
-# 
+#
 # # Combine ps_year_24 with harm_year_high_low
 # comp_ps = merge(harm_year_high_low, ps_year_24, by.x = "tide_time", by.y = "ps_tide_time", all.x = TRUE)
-# 
+#
 # # Pull out cases that agree
 # comp_ps = data.table(comp_ps)
 # comp_agree = comp_ps[!is.na(ps_tide_level)]
 # comp_diff = comp_ps[is.na(ps_tide_level)]
-# 
-# # RESULT: It makes no difference to use higher resolution (30-sec, 20-sec) 
+#
+# # RESULT: It makes no difference to use higher resolution (30-sec, 20-sec)
 #           in quest to match exact NOAA times for highs and low
 # nrow(comp_diff) / nrow(comp_agree)
 # # 0.1003891
@@ -589,7 +590,7 @@ tide_three = tide_level(
   start_date = "2023-12-08",
   end_date = "2024-01-08",
   data_interval = "6-min"
-  
+
 )
 nd = Sys.time(); nd - tm  # 2.774406 secs pre: 0.246902 secs DT
 
@@ -663,7 +664,7 @@ nd = Sys.time(); nd - tm  # 1.287391 mins
 
 # Combine tide height columns
 tide_four = data.frame(tide_four)
-tide_comparison = cbind(tide_four, rtide_four$TideHeight)  
+tide_comparison = cbind(tide_four, rtide_four$TideHeight)
 names(tide_comparison) = c("station_code", "station_name", "reference_station_code",
                            "tide_type", "tide_time", "mytide_ht", "rtide_ht")
 
@@ -688,9 +689,9 @@ noaa_tides = read.csv(full_url)
 
 noaa_tides$tide_time = as.POSIXct(noaa_tides$Date.Time)
 noaa_tides$Prediction = round(noaa_tides$Prediction, digits = 2)
-noaa_comparison = noaa_tides |> 
-  dplyr::select(tide_time, noaa_ht = Prediction) |> 
-  dplyr::left_join(tide_differences, by = "tide_time") |> 
+noaa_comparison = noaa_tides |>
+  dplyr::select(tide_time, noaa_ht = Prediction) |>
+  dplyr::left_join(tide_differences, by = "tide_time") |>
   subset(!is.na(station_code))
 
 # Pull out cases where mine matches noaa
