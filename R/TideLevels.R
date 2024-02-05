@@ -128,7 +128,7 @@ tide_level = function(tide_station = "Seattle",
   } else if ( station_info[[2]] == "H" & data_interval %in% c("high-low", "high-only", "low-only") ) {
     tide_out = hl_tides
   } else if (station_info[[2]] == "H" & data_interval %in% c("1-min", "6-min", "15-min", "30-min", "60-min") ) {
-    tide_pred = data.table::as.data.table(tide_pred)
+    tide_pred = as.data.table(tide_pred)
     tide_pred = tide_pred[, list(station_code, station_name,
                                  reference_station_code,
                                  tide_type, tide_time, tide_level)]
@@ -165,11 +165,11 @@ harmonic_tides = function(station_code, station_info,
                           timezone,
                           verbose,
                           harms) {
-  stations_dt = data.table::as.data.table(harms$st_data)
-  offsets_dt = data.table::as.data.table(harms$st_offsets)
-  stconsts_dt = data.table::as.data.table(harms$st_constituents)
-  yrconsts_dt = data.table::as.data.table(harms$yr_constituents)
-  speeds_dt = data.table::as.data.table(harms$ct_speed)
+  stations_dt = as.data.table(harms$st_data)
+  offsets_dt = as.data.table(harms$st_offsets)
+  stconsts_dt = as.data.table(harms$st_constituents)
+  yrconsts_dt = as.data.table(harms$yr_constituents)
+  speeds_dt = as.data.table(harms$ct_speed)
   # Station data
   station_dt = stations_dt[station_code == station_info[[1]]]
   datum = station_dt[, station_datum]
@@ -183,14 +183,14 @@ harmonic_tides = function(station_code, station_info,
   # Year constants
   year_range = get_year_range(start_date, end_date)
   yr_dat = yrconsts_dt[node_year %in% year_range & order %in% consts[,order]]
-  yr_args = data.table::as.data.table(node_year = year_range,
-                                      year_factor = NA_real_,
-                                      equil_arg = NA_real_)
+  yr_args = as.data.table(node_year = year_range,
+                          year_factor = NA_real_,
+                          equil_arg = NA_real_)
   for (i in seq_along(year_range) ) yr_args$year_factor[i] =
     list(yr_dat$year_factor[yr_dat$node_year == year_range[i]])
   for (i in seq_along(year_range) ) yr_args$equil_arg[i] =
     list(yr_dat$equil_arg[yr_dat$node_year == year_range[i]])
-  td_hts = data.table::as.data.table(tide_time = prediction_dts, datum = datum, meridian = meridian)
+  td_hts = as.data.table(tide_time = prediction_dts, datum = datum, meridian = meridian)
   set(td_hts, j = "amplitude", value = list(amplitude))
   set(td_hts, j = "speed", value = list(speed))
   set(td_hts, j = "phase", value = list(phase))
@@ -231,7 +231,7 @@ find_peaks = function (x, m = 3){
 
 # High and low tide values.
 high_low_tides = function(tide_pred, data_interval, tide_station) {
-  tide_pred = data.table::as.data.table(tide_pred)
+  tide_pred = as.data.table(tide_pred)
   high_peaks = find_peaks(tide_pred$tide_level, m = 5)
   low_peaks = find_peaks(-tide_pred$tide_level, m = 5)
   for ( i in seq_along(tide_pred$tide_time) ) {
@@ -252,7 +252,7 @@ high_low_tides = function(tide_pred, data_interval, tide_station) {
 
 # Apply offsets for subordinate stations
 subordinate_tides = function(hl_tides, harms) {
-  offsets_dt = data.table::as.data.table(harms$st_offsets)
+  offsets_dt = as.data.table(harms$st_offsets)
   offsets_dt = offsets_dt[station_code == hl_tides$station_code[1]]
   tide_hl = cbind(offsets_dt, hl_tides[, list(tide_type, tide_time, tide_level)])
   tide_hl[tide_type == "H", ':=' (offset_time = tide_time + (time_offset_high_tide_minutes * 60),
@@ -260,6 +260,6 @@ subordinate_tides = function(hl_tides, harms) {
   tide_hl[tide_type == "L", ':=' (offset_time = tide_time + (time_offset_low_tide_minutes * 60),
                                   offset_level = tide_level * height_offset_factor_low_tide)]
   tide_hl = tide_hl[, list(station_code, station_name, reference_station_code, tide_type,
-                        tide_time = offset_time, tide_level = offset_level)]
+                           tide_time = offset_time, tide_level = offset_level)]
   return(tide_hl)
 }
