@@ -63,11 +63,11 @@ identify_station = function(station, harms = MarineTides::harmonics) {
 #' @param harms Harmonics data
 #'
 #' @returns
-#' A list of character values for the tide station composed of `station_code`, `station_type`
-#' and `timezone`. If the tide station is a subordinate station the `station_code` will be
-#' that of the harmonic reference station. The remaining values, `timezone` and `station_type`,
-#' will always belong to the tide station identified by the `station_code` variable, regardless
-#' of whether it is a subordinate or harmonic station.
+#' A list of text values including `station_code`, `station_type`, and `timezone`. If the tide
+#' station is a subordinate station the `station_code` will be that of the harmonic reference
+#' station. The remaining values, `timezone` and `station_type`, will always belong to the tide
+#' station identified by the `station_code` variable, regardless of whether it is a subordinate
+#' or harmonic station.
 
 #' @export
 get_reference_station = function(station_code, verbose, harms = harmonics) {

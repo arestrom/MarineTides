@@ -166,7 +166,7 @@ nd = Sys.time(); nd - tm  # 18.34023 secs
 
 #====================================================================
 # Check all highs and lows for year vs tides table in ps_shellfish DB
-# RESULT: Times differed by one minute in 10% of cases over 2024.
+# RESULT: Times differed by ~ one minute in 10% of cases over 2024.
 #         NOAA was typically one min earlier when values disagreed.
 #====================================================================
 
@@ -406,7 +406,7 @@ rtides_match = subset(noaa_comparison, noaa_ht == rtide_ht)
 #============================================================================
 # Result: MarineTides matches:  79% of the time
 #         rtide matches: 21% of the time
-# If rounded to one digit, both would likely always match noaa
+# If rounded to one digit, both would likely always match NOAA
 #============================================================================
 
 
