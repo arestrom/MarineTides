@@ -175,8 +175,8 @@ harmonic_tides = function(station_code, station_info,
   datum = station_dt[, station_datum]
   meridian = station_dt[, station_meridian]
   # Station Constituents data: amplitude, speed, phase
-  consts = stconsts_dt[station_code == station_info[[1]], .(order, code, amplitude, phase)]
-  consts = speeds_dt[consts, .(order, code, amplitude, phase, speed), on = "order"]
+  consts = stconsts_dt[station_code == station_info[[1]], list(order, code, amplitude, phase)]
+  consts = speeds_dt[consts, list(order, code, amplitude, phase, speed), on = "order"]
   amplitude = consts[, amplitude]
   speed = consts[, speed]
   phase = consts[, phase]
@@ -254,12 +254,12 @@ high_low_tides = function(tide_pred, data_interval, tide_station) {
 subordinate_tides = function(hl_tides, harms) {
   offsets_dt = data.table::as.data.table(harms$st_offsets)
   offsets_dt = offsets_dt[station_code == hl_tides$station_code[1]]
-  tide_hl = cbind(offsets_dt, hl_tides[, .(tide_type, tide_time, tide_level)])
+  tide_hl = cbind(offsets_dt, hl_tides[, list(tide_type, tide_time, tide_level)])
   tide_hl[tide_type == "H", ':=' (offset_time = tide_time + (time_offset_high_tide_minutes * 60),
                                   offset_level = tide_level * height_offset_factor_high_tide)]
   tide_hl[tide_type == "L", ':=' (offset_time = tide_time + (time_offset_low_tide_minutes * 60),
                                   offset_level = tide_level * height_offset_factor_low_tide)]
-  tide_hl = tide_hl[, .(station_code, station_name, reference_station_code, tide_type,
+  tide_hl = tide_hl[, list(station_code, station_name, reference_station_code, tide_type,
                         tide_time = offset_time, tide_level = offset_level)]
   return(tide_hl)
 }
