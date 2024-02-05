@@ -8,7 +8,7 @@
 #' @param start_date A character field for start of prediction timespan
 #' @param end_date A character field for end of prediction timespan
 #' @param pred_inc An integer field to specify number of minutes between predictions
-#' @param harms Harmonics data
+#' @param timezone Typically the timezone of the `tide_station`, but can also be set manually.
 #'
 #' @returns
 #' `get_prediction_range()` returns a vector of datetimes in `UTC` timezone between `start_date`

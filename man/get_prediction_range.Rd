@@ -13,7 +13,7 @@ get_prediction_range(start_date, end_date, pred_inc, timezone)
 
 \item{pred_inc}{An integer field to specify number of minutes between predictions}
 
-\item{harms}{Harmonics data}
+\item{timezone}{Typically the timezone of the `tide_station`, but can also be set manually.}
 }
 \value{
 `get_prediction_range()` returns a vector of datetimes in `UTC` timezone between `start_date`
