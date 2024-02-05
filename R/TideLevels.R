@@ -129,9 +129,9 @@ tide_level = function(tide_station = "Seattle",
     tide_out = hl_tides
   } else if (station_info[[2]] == "H" & data_interval %in% c("1-min", "6-min", "15-min", "30-min", "60-min") ) {
     tide_pred = data.table::as.data.table(tide_pred)
-    tide_pred = tide_pred[, .(station_code, station_name,
-                              reference_station_code,
-                              tide_type, tide_time, tide_level)]
+    tide_pred = tide_pred[, list(station_code, station_name,
+                                 reference_station_code,
+                                 tide_type, tide_time, tide_level)]
     tide_out = tide_pred
   }
   return(tide_out)
