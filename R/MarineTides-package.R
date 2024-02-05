@@ -14,6 +14,7 @@ NULL
 ## quiets concerns of R CMD check re: the .'s and vars in data.table
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("timezone",
                                                         "reference_station_code",
+                                                        "station_name",
                                                         "station_datum",
                                                         "station_meridian",
                                                         "code",
@@ -31,5 +32,4 @@ if(getRversion() >= "2.15.1")  utils::globalVariables(c("timezone",
                                                         "height_offset_factor_high_tide",
                                                         "height_offset_factor_low_tide",
                                                         "offset_level",
-                                                        "offset_time",
-                                                        "r_week"))
+                                                        "offset_time"))
