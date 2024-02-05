@@ -59,7 +59,7 @@ identify_station = function(station, harms = MarineTides::harmonics) {
 #' tide predictions are generated for subordinate stations.
 #'
 #' @param station_code A character field
-#' @param verbose A boolean indicating whether additional information should be displayed
+#' @param verbose A boolean requesting additional information be printed to the R console.
 #' @param harms Harmonics data
 #'
 #' @returns

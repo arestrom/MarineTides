@@ -12,6 +12,7 @@
 #     Possibly time from HL function, then spline?
 #  2. Create a tide calendar function?
 #  3. Create a colored, clickable squares, annual calendar function?
+#  4. See if I can dump start and end dates from harmonic_tides()
 #
 # AS 2024-02-03
 #====================================================================================

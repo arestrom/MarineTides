@@ -1,20 +1,20 @@
 #' @title
-#' Predict tide levels over a given interval for a tide station
+#' Predict tide levels for harmonic or subordinate stations
 #'
 #' @description
 #' `tide_level()` generates tide predictions for a `tide_station` from `start_date` to
 #' `end_date` at the time interval specified by `data_interval`. The `timezone`, by
-#' default, is that of the specified `tide_station`, but can be set to other locales
-#' if needed.
+#' default, is that of the specified `tide_station`, but can be set to other zones if
+#' needed.
 #'
 #' @param tide_station A character field similar, or identical, to the tide station name
 #' @param start_date A character field for the start date of the tide prediction time-span
 #' @param end_date A character field for the end date of the tide prediction time-span
 #' @param data_interval A character value for the time increment between predictions.
-#'   Allowable options include "1-min", "6-min", "15-min", "30-min", "60-min",
-#                              "high-low", "high-only", "low-only"
+#'   Allowable options include `1-min`, `6-min`, `15-min`, `30-min`, `60-min`, `high-low`,
+#'   `high-only`, `low-only`
 #' @param timezone Typically the timezone of the `tide_station`, but can also be set manually.
-#' @param verbose A boolean for if additional information should be shown in the R console.
+#' @param verbose A boolean requesting additional information be printed to the R console.
 #' @param harms Harmonics data
 #'
 #' @details
@@ -42,9 +42,23 @@
 #' for other intervals. The shape of tidal curves between highs and lows at subordinate stations
 #' may differ considerably from those of the reference harmonic stations.
 #'
+#' When predictions are requested for subordinate stations, or when the `data_interval` is one
+#' of `high-low`, `high-only`, `low-only`, the time increment between predictions are set
+#' to one minute. This allows peaks and valleys in the tidal curve to be found for the daily
+#' high and low times and levels.
+#'
 #' @returns
-#' A dataframe of values including the `station_code`, `station_name`, `reference_station_code`,
-#' `tide_type` (harmonic, or subordinate), `tide_time`, and `tide_level` in meters.
+#' A dataframe of predicted values. Includes information on the tide station
+#'
+#' @format A data.frame:
+#' \describe{
+#'   \item{station_code}{The NOAA Station ID (chr).}
+#'   \item{station_name}{The NOAA Station Name (chr).}
+#'   \item{reference_station_code}{Station ID for the reference station (chr).}
+#'   \item{tide_type}{Harmonic or Subordinate (chr).}
+#'   \item{tide_time}{Datetime of the prediction (time).}
+#'   \item{MLLW}{Tide level in meters (dbl).}
+#' }
 #'
 #' @export
 tide_level = function(tide_station = "Seattle",
@@ -123,7 +137,28 @@ tide_level = function(tide_station = "Seattle",
   return(tide_out)
 }
 
-# Generate harmonic tides
+#' @title
+#' Predict tide levels for harmonic stations
+#'
+#' @description
+#' Given a `station_code`, a vector of datetimes (`prediction_dts`), and some additional
+#' information in the `station_info` list output by [`MarineTides::get_reference_station`],
+#' `harmonic_tides()` generates tide predictions for one harmonic station. It is the core
+#' function called by [`MarineTides::tide_level`]
+#'
+#' @param station_code A character field identical to the NOAA Station ID
+#' @param station_info A list including codes for the reference or subordinate stations
+#' @param start_date A character field for the start date of the tide prediction time-span
+#' @param end_date A character field for the end date of the tide prediction time-span
+#' @param prediction_dts A vector of datetimes for the tide prediction.
+#' @param timezone Typically the timezone of the `tide_station`, but can also be set manually.
+#' @param verbose A boolean requesting additional information be printed to the R console.
+#' @param harms Harmonics data
+#'
+#' @returns
+#' A dataframe of predicted values. Includes information on the tide station
+#'
+#' @export
 harmonic_tides = function(station_code, station_info,
                           start_date, end_date,
                           prediction_dts,
