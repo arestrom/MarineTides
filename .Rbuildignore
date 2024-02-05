@@ -3,4 +3,4 @@
 ^data-raw$
 ^scripts$
 ^\.gitignore$
-^README.Rmd$
+^readme.Rmd$
