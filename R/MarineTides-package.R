@@ -8,6 +8,7 @@
 #'
 #' Maintainer: Are Strom <are.strom@@gmail.com>
 #' @keywords package
+#' @import data.table
 NULL
 
 ## quiets concerns of R CMD check re: the .'s and vars in data.table
@@ -21,7 +22,6 @@ if(getRversion() >= "2.15.1")  utils::globalVariables(c("timezone",
                                                         "year",
                                                         "tide_type",
                                                         "%ilike%",
-                                                        "station_name",
                                                         "station_code",
                                                         "tide_type",
                                                         "tide_time",

@@ -14,6 +14,9 @@
 #  3. Create a colored, clickable squares, annual calendar function?
 #  4. See if I can dump start and end dates from harmonic_tides()
 #
+#  Packaging issues:
+#  1 https://stackoverflow.com/questions/10527072/using-data-table-package-inside-my-own-package
+#
 # AS 2024-02-03
 #====================================================================================
 
@@ -61,9 +64,9 @@ pg_con_local = function(dbname, port = '5433') {
 
 # Function to identify station code
 identify_station = function(station, harms = harmonics) {
-  stations_dt = as.data.table(harms$st_data)
+  stations_dt = data.table::as.data.table(harms$st_data)
   # Pull out possible stations and ids
-  station_codes = stations_dt[station_name %ilike% station, .(station_name, station_code)]
+  station_codes = stations_dt[station_name %ilike% station, list(station_name, station_code)]
   # Message in case more than one station matches
   if ( nrow(station_codes) > 1L ) {
     n_stations = station_codes$station_name

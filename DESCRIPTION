@@ -17,7 +17,7 @@ BugReports: https://github.com/arestrom/MarineTides/issues
 Depends: R (>= 4.3)
 Imports:
     anytime (>= 0.3.9),
-    data.table (>= 1.14.8),
+    data.table (>= 1.14.0),
     glue (>= 1.7.0)
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
