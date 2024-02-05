@@ -14,7 +14,7 @@ Description: Generates tide predictions using harmonics data obtained from the N
     was in part adapted from the rtide package, which in turn was derived from XTide. 
 URL: https://github.com/arestrom/MarineTides
 BugReports: https://github.com/arestrom/MarineTides/issues
-Depends: R (>= 4.3.1)
+Depends: R (>= 4.3)
 Imports:
     anytime (>= 0.3.9),
     data.table (>= 1.14.8),

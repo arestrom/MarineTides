@@ -70,7 +70,7 @@ identify_station = function(station, harms = MarineTides::harmonics) {
 #' or harmonic station.
 
 #' @export
-get_reference_station = function(station_code, verbose, harms = harmonics) {
+get_reference_station = function(station_code, verbose, harms = MarineTides::harmonics) {
   station_cd = station_code
   stations_dt = data.table(harms$st_data)
   offsets_dt = data.table(harms$st_offsets)
