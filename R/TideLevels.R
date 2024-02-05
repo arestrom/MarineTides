@@ -183,14 +183,14 @@ harmonic_tides = function(station_code, station_info,
   # Year constants
   year_range = get_year_range(start_date, end_date)
   yr_dat = yrconsts_dt[node_year %in% year_range & order %in% consts[,order]]
-  yr_args = as.data.table(node_year = year_range,
-                          year_factor = NA_real_,
-                          equil_arg = NA_real_)
+  yr_args = data.table(node_year = year_range,
+                       year_factor = NA_real_,
+                       equil_arg = NA_real_)
   for (i in seq_along(year_range) ) yr_args$year_factor[i] =
     list(yr_dat$year_factor[yr_dat$node_year == year_range[i]])
   for (i in seq_along(year_range) ) yr_args$equil_arg[i] =
     list(yr_dat$equil_arg[yr_dat$node_year == year_range[i]])
-  td_hts = as.data.table(tide_time = prediction_dts, datum = datum, meridian = meridian)
+  td_hts = data.table(tide_time = prediction_dts, datum = datum, meridian = meridian)
   set(td_hts, j = "amplitude", value = list(amplitude))
   set(td_hts, j = "speed", value = list(speed))
   set(td_hts, j = "phase", value = list(phase))
