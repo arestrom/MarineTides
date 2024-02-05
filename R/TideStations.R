@@ -27,7 +27,7 @@
 #'
 #' @export
 identify_station = function(station, harms = MarineTides::harmonics) {
-  stations_dt = as.data.table(harms$st_data)
+  stations_dt = data.table::as.data.table(harms$st_data)
   # Pull out possible stations and ids
   station_codes = stations_dt[station_name %ilike% station, list(station_name, station_code)]
   # Message in case more than one station matches
@@ -72,8 +72,8 @@ identify_station = function(station, harms = MarineTides::harmonics) {
 #' @export
 get_reference_station = function(station_code, verbose, harms = MarineTides::harmonics) {
   station_cd = station_code
-  stations_dt = as.data.table(harms$st_data)
-  offsets_dt = as.data.table(harms$st_offsets)
+  stations_dt = data.table::as.data.table(harms$st_data)
+  offsets_dt = data.table::as.data.table(harms$st_offsets)
   station_dt = stations_dt[station_code == station_cd]
   station_type = station_dt[, station_type]
   station_name = station_dt[, station_name]
