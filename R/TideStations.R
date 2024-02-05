@@ -29,7 +29,7 @@
 identify_station = function(station, harms = MarineTides::harmonics) {
   stations_dt = data.table(harms$st_data)
   # Pull out possible stations and ids
-  station_codes = stations_dt[station_name %ilike% station, .(station_name, station_code)]
+  station_codes = stations_dt[station_name %ilike% station, list(station_name, station_code)]
   # Message in case more than one station matches
   if ( nrow(station_codes) > 1L ) {
     n_stations = station_codes$station_name
