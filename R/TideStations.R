@@ -31,7 +31,9 @@ identify_station = function(station, harms = MarineTides::harmonics) {
   # Pull out possible stations and ids
   station_codes = stations_dt[station_name %ilike% station, list(station_name, station_code)]
   # Message in case more than one station matches
-  if ( nrow(station_codes) > 1L ) {
+  if ( nrow(station_codes) == 1L ) {
+    station_code = station_codes$station_code
+  } else if ( nrow(station_codes) > 1L ) {
     n_stations = station_codes$station_name
     n_stations = paste0(n_stations, collapse = "; ")
     cat(glue::glue("Stations listed below have similar names:\n{n_stations}", "\n",
@@ -42,7 +44,7 @@ identify_station = function(station, harms = MarineTides::harmonics) {
     cat(glue::glue("Please try again: \n'{station}' did not match any existing station names"), "\n\n")
     station_code = NA_character_
   } else {
-    station_code = station_codes$station_code
+    station_code = NA_character_
   }
   return(station_code)
 }

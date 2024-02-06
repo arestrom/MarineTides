@@ -409,4 +409,30 @@ rtides_match = subset(noaa_comparison, noaa_ht == rtide_ht)
 # If rounded to one digit, both would likely always match NOAA
 #============================================================================
 
+# # Some SQL tests
+# SELECT ty.station_type_code, count( ty.station_type_code)
+# FROM station as st
+# LEFT JOIN station_type_lut as ty on ty.station_type_id = st.station_type_id
+# group by ty.station_type_code
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
