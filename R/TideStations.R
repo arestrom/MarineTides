@@ -37,7 +37,7 @@ identify_station = function(station, verbose, harms = MarineTides::harmonics) {
     if ( verbose == TRUE ) {
       alt_stations = alt_names$station_name[!alt_names$station_name == station]
       alt_stations = paste0(alt_stations, collapse = "; ")
-      cat(glue::glue("Since you asked, stations listed below have similar names:\n{alt_stations}", "\n"))
+      cat(glue::glue("{station} works! But since you asked, here are some similar names:\n{alt_stations}", "\n"))
     }
   } else if ( nrow(first_try) == 0L ) {
     station_codes = stations_dt[station_name %ilike% station, list(station_name, station_code)]

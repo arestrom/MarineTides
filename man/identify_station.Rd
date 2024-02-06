@@ -4,10 +4,12 @@
 \alias{identify_station}
 \title{Retrieve a unique station code by entering a station name}
 \usage{
-identify_station(station, harms = MarineTides::harmonics)
+identify_station(station, verbose, harms = MarineTides::harmonics)
 }
 \arguments{
 \item{station}{A character field approximating, or identical, to the tide station name}
+
+\item{verbose}{A boolean requesting additional information be printed to the R console}
 
 \item{harms}{Harmonics data}
 }

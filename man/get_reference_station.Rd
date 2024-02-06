@@ -9,7 +9,7 @@ get_reference_station(station_code, verbose, harms = MarineTides::harmonics)
 \arguments{
 \item{station_code}{A character field}
 
-\item{verbose}{A boolean requesting additional information be printed to the R console.}
+\item{verbose}{A boolean requesting additional information be printed to the R console}
 
 \item{harms}{Harmonics data}
 }
