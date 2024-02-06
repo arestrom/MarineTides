@@ -8,6 +8,7 @@
 #' found then a message will issued to retry using a different spelling.
 #'
 #' @param station A character field approximating, or identical, to the tide station name
+#' @param verbose A boolean requesting additional information be printed to the R console
 #' @param harms Harmonics data
 #'
 #' @details
@@ -26,23 +27,31 @@
 #' matches are found then a message will suggest trying a different spelling.
 #'
 #' @export
-identify_station = function(station, harms = MarineTides::harmonics) {
+identify_station = function(station, verbose, harms = MarineTides::harmonics) {
   stations_dt = as.data.table(harms$st_data)
   # Pull out possible stations and ids
-  station_codes = stations_dt[station_name %ilike% station, list(station_name, station_code)]
-  # Message in case more than one station matches
-  if ( nrow(station_codes) == 1L ) {
-    station_code = station_codes$station_code
-  } else if ( nrow(station_codes) > 1L ) {
-    n_stations = station_codes$station_name
-    n_stations = paste0(n_stations, collapse = "; ")
-    cat(glue::glue("Stations listed below have similar names:\n{n_stations}", "\n",
-                   "Please enter one specific station"), "\n\n")
-    station_code = NA_character_
-    # Message in case none match
-  } else if ( nrow(station_codes) == 0L ) {
-    cat(glue::glue("Please try again: \n'{station}' did not match any existing station names"), "\n\n")
-    station_code = NA_character_
+  first_try = stations_dt[station_name == station, list(station_name, station_code)]
+  if ( nrow(first_try) == 1L ) {
+    station_code = first_try$station_code
+    alt_names = stations_dt[station_name %ilike% station, list(station_name, station_code)]
+    if ( verbose == TRUE ) {
+      alt_stations = alt_names$station_name[!alt_names$station_name == station]
+      alt_stations = paste0(alt_stations, collapse = "; ")
+      cat(glue::glue("Since you asked, stations listed below have similar names:\n{alt_stations}", "\n"))
+    }
+  } else if ( nrow(first_try) == 0L ) {
+    station_codes = stations_dt[station_name %ilike% station, list(station_name, station_code)]
+    if ( nrow(station_codes) > 1L ) {
+      # Message in case more than one station matches
+      n_stations = station_codes$station_name
+      n_stations = paste0(n_stations, collapse = "; ")
+      cat(glue::glue("Stations listed below have similar names:\n{n_stations}", "\n",
+                     "Please enter one specific station"), "\n\n")
+      station_code = NA_character_
+    } else if ( nrow(station_codes) == 0L ) {
+      cat(glue::glue("Please try again: \n'{station}' did not match any existing station names"), "\n\n")
+      station_code = NA_character_
+    }
   } else {
     station_code = NA_character_
   }
@@ -61,7 +70,7 @@ identify_station = function(station, harms = MarineTides::harmonics) {
 #' tide predictions are generated for subordinate stations.
 #'
 #' @param station_code A character field
-#' @param verbose A boolean requesting additional information be printed to the R console.
+#' @param verbose A boolean requesting additional information be printed to the R console
 #' @param harms Harmonics data
 #'
 #' @returns

@@ -68,7 +68,7 @@ tide_level = function(tide_station = "Seattle",
                       timezone = NULL,
                       verbose = FALSE,
                       harms = MarineTides::harmonics) {
-  station_code = identify_station(tide_station)
+  station_code = identify_station(tide_station, verbose, harms)
   if ( is.na(station_code) ) {
     stop("Station name is ambiguous")
   } else {
