@@ -210,7 +210,7 @@ harms_now_time_off = harms_now[!time_meridian == 0L]; nrow(harms_now_time_off)
 noaa_tides = function(station_code, start_date, end_date, time_interval) {
   st_code = station_code
   st_date = gsub("-", "", start_date)
-  nd_date = gsub("-", "", start_date)
+  nd_date = gsub("-", "", end_date)
   time_int = time_interval
   coops_url = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?"
   pred_url = "product=predictions&application=NOS.COOPS.TAC.WL&"

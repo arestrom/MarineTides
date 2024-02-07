@@ -64,12 +64,12 @@ pg_con_local = function(dbname, port = '5433') {
 }
 
 #=============================================================================
-# tideslite Functions: THIS COULD BE WAY BETTER !!!!!!!!!!!!!!!!!!!!!!!!
+# tideslite Functions:
 #=============================================================================
 
 # station = "Tacol"
 
-# Function to identify station code
+# Function to identify station code. THIS COULD BE WAY BETTER !!!!!!!!!!!!!!!!!!!!!!!!
 identify_station = function(station, verbose, harms = harmonics) {
   stations_dt = as.data.table(harms$st_data)
   # Pull out possible stations and ids
