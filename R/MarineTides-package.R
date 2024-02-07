@@ -7,7 +7,10 @@
 #' @author Are Strom
 #'
 #' Maintainer: Are Strom <are.strom@@gmail.com>
-#' @keywords package
+#'
+#' @keywords internal
+"_PACKAGE"
+#'
 #' @import data.table
 NULL
 

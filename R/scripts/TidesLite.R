@@ -7,6 +7,11 @@
 #  3. Use Sys.date as default: --Done
 #  5. See if I can get timezone from harms --Done
 #
+# ToDo:
+#  1. Fix the identify_stations function. Way too convoluted, and not fully working.
+#  2. Why are Tacoma tides off...both RTide and Mine....similar outputs. Look at
+#     time_meridian and timezone offsets first. See how many have non-zero meridians.
+#
 #  NEXT:
 #  1. Create function to plot high-low data, using spline, or combo?
 #     Possibly time from HL function, then spline?
@@ -59,10 +64,10 @@ pg_con_local = function(dbname, port = '5433') {
 }
 
 #=============================================================================
-# tideslite Functions
+# tideslite Functions: THIS COULD BE WAY BETTER !!!!!!!!!!!!!!!!!!!!!!!!
 #=============================================================================
 
-station = "Tacol"
+# station = "Tacol"
 
 # Function to identify station code
 identify_station = function(station, verbose, harms = harmonics) {
