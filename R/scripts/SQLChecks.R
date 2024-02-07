@@ -315,11 +315,11 @@ harms_mtide = mtide_tides_loop(harms_time_off,
 harms_noaa = merge(harms_now_time_off, harms_time_off_noaa,
                    by = "station_code", all.x = TRUE)
 
-# Join rtide and noaa
+# Join rtide and noaa as comb_tide
 harms_noaa$tide_time = as.POSIXct(harms_noaa$tide_time, tz = "UTC")
 comb_tide = merge(harms_noaa, harms_rtide, by = c("station_code", "tide_time"), all.x = TRUE)
 
-# Join mtide and noaa comb_tide
+# Join mtide to comb_tide
 harms_mtide = harms_mtide[, .(station_code, tide_time, mtide_level)]
 comb_tide = merge(comb_tide, harms_mtide, by = c("station_code", "tide_time"), all.x = TRUE)
 comb_tide = comb_tide[, c("station_name", "station_code", "time_meridian", "established", "removed",
@@ -343,67 +343,6 @@ rtide::tide_height("Atka",
                    minutes = 60L)
 
 
-
-
-
-
-
-
-
-#====================================================================
-# Results: For one year at 6 minute resolution:
-#          using data.table is ~ 34 times faster
-#====================================================================
-
-#====================================================================
-# Test to see if output from rtide vs MarineTides is comparable
-#====================================================================
-
-# Combine tide height columns
-tide_four = data.frame(tide_four)
-tide_comparison = cbind(tide_four, rtide_four$TideHeight)
-names(tide_comparison) = c("station_code", "station_name", "reference_station_code",
-                           "tide_type", "tide_time", "mtide_ht", "rtide_ht")
-
-# Compute difference
-tide_comparison$mtide_ht = round(tide_comparison$mtide_ht, digits = 2)
-tide_comparison$rtide_ht = round(tide_comparison$rtide_ht, digits = 2)
-
-# Pull out cases where heights differ
-tide_differences = subset(tide_comparison, !mtide_ht == rtide_ht)
-tide_differences$diff = abs(tide_differences$mtide_ht - tide_differences$rtide_ht)
-
-# Compute the maximum difference from rtide: max = 0.03, about 30 + cases. None at 0.1.
-max(tide_differences$diff)
-
-# Get one month of noaa data to see where mine differs from noaa. One month is max allowed.
-coops_url = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?"
-pred_url = "product=predictions&application=NOS.COOPS.TAC.WL&"
-dt_url = "begin_date=20240101&end_date=20240130&datum=MLLW&"
-st_url = "station=9447130&time_zone=lst_ldt&units=metric&interval=6&format=csv"
-full_url = paste0(coops_url, pred_url, dt_url, st_url)
-noaa_tides = read.csv(full_url)
-
-noaa_tides$tide_time = as.POSIXct(noaa_tides$Date.Time)
-noaa_tides$Prediction = round(noaa_tides$Prediction, digits = 2)
-noaa_comparison = noaa_tides |>
-  dplyr::select(tide_time, noaa_ht = Prediction) |>
-  dplyr::left_join(tide_differences, by = "tide_time") |>
-  subset(!is.na(station_code))
-
-# Pull out cases where mine matches noaa
-m_tides_match = subset(noaa_comparison, noaa_ht == mtide_ht)
-rtides_match = subset(noaa_comparison, noaa_ht == rtide_ht)
-
-# Percent of time mine vs rtide matches noaa output for one month at 6 min increments
-(m_match = nrow(m_tides_match) / nrow(noaa_comparison))  # 79% of the time
-(rtide_match = nrow(rtides_match) / nrow(noaa_comparison)) # 21% of the time
-
-#============================================================================
-# Result: MarineTides matches:  79% of the time
-#         rtide matches: 21% of the time
-# If rounded to one digit, both would likely always match NOAA
-#============================================================================
 
 # # Some SQL tests
 # SELECT ty.station_type_code, count( ty.station_type_code)
