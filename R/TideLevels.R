@@ -88,8 +88,8 @@ tide_level = function(tide_station = "Seattle",
   if ( is.null(timezone) ) {
     timezone = station_info[[3]]
   }
-  start_date = anytime::anydate(start_date)
-  end_date = anytime::anydate(end_date)
+  start_date = anytime::anydate(start_date, tz = timezone)
+  end_date = anytime::anydate(end_date, tz = timezone)
   if ( is.na(start_date) ) {
     stop("start_date is ambiguous")
   }
@@ -99,13 +99,7 @@ tide_level = function(tide_station = "Seattle",
   if ( verbose == TRUE ) {
     cat(glue::glue("\nTides will be predicted from {start_date} to {end_date}\n\n"))
   }
-  final_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
-  attr(final_dts, "tzone") = timezone
-  if ( station_info[[2]] == "S" | data_interval %in% c("high-low", "high-only", "low-only") ) {
-    prediction_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
-  } else {
-    prediction_dts = final_dts
-  }
+  prediction_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
   if ( station_info[[2]] == "S" & data_interval %in% c("1-min", "6-min", "15-min", "30-min", "60-min") ) {
     data_interval = "high-low"
     warning("\nFor subordinate stations, only high and low tide values will be computed.\n")
@@ -173,7 +167,7 @@ harmonic_tides = function(station_code, station_info,
   # Station data
   station_dt = stations_dt[station_code == station_info[[1]]]
   datum = station_dt[, station_datum]
-  meridian = station_dt[, station_meridian]
+  meridian = 0L
   # Station Constituents data: amplitude, speed, phase
   consts = stconsts_dt[station_code == station_info[[1]], list(order, code, amplitude, phase)]
   consts = speeds_dt[consts, list(order, code, amplitude, phase, speed), on = "order"]

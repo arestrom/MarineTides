@@ -11,6 +11,8 @@
 #  1. Fix the identify_stations function. Way too convoluted, and not fully working.
 #  2. Why are Tacoma tides off...both RTide and Mine....similar outputs. Look at
 #     time_meridian and timezone offsets first. See how many have non-zero meridians.
+#     RESULT: Issue fixed when time-meridian set to zero. Check here first then fix
+#             in database! Set all meridians to zero if harmonic.
 #
 #  NEXT:
 #  1. Create function to plot high-low data, using spline, or combo?
@@ -67,10 +69,36 @@ pg_con_local = function(dbname, port = '5433') {
 # tideslite Functions:
 #=============================================================================
 
-# station = "Tacol"
+# # Load needed libraries
+# library(rtide)        # Needed for harmonics data
+# library(magrittr)     # Will not be needed later
+# library(datacheckr)   # Will not be essential later# Load needed libraries
+# library(chk)
+#
+# # harmonics = rtide::harmonics
+# # tide_stations()
+#
+# tide_stations <- function(stations = ".*", harmonics = rtide::harmonics) {
+#   stations = "San Mateo Bridge (west end), San Francisco Bay, California"
+#   stations <- gsub("[(]", "[(]", stations)
+#   stations <- gsub("[)]", "[)]", stations)
+#   stations <- paste0("(", paste(stations, collapse = ")|("), ")")
+#   match <- grepl(stations, harmonics$Station$Station)
+#   match <- which(match)
+#   if (!length(match)) stop("no matching stations", call. = FALSE)
+#   harmonics$Station$Station[sort(unique(match))]
+# }
+#
+# harms = MarineTides::harmonics
+# # stations_dt = as.data.table(harms$st_data)
+# # unique(stations_dt$station_name)
+# # grep("Folly", value = TRUE, stations_dt$station_name)
+# verbose = TRUE
+# station = "Tacoma"
+# #station = "Whit"
 
 # Function to identify station code. THIS COULD BE WAY BETTER !!!!!!!!!!!!!!!!!!!!!!!!
-identify_station = function(station, verbose, harms = harmonics) {
+identify_station = function(station, verbose, harms = MarineTides::harmonics) {
   stations_dt = as.data.table(harms$st_data)
   # Pull out possible stations and ids
   first_try = stations_dt[station_name == station, list(station_name, station_code)]
@@ -79,10 +107,12 @@ identify_station = function(station, verbose, harms = harmonics) {
     alt_names = stations_dt[station_name %ilike% station, list(station_name, station_code)]
     if ( verbose == TRUE ) {
       alt_stations = alt_names$station_name[!alt_names$station_name == station]
-      alt_stations = paste0(alt_stations, collapse = "; ")
-      cat(glue::glue("Since you asked, stations listed below have similar names:\n{alt_stations}", "\n"))
+      if ( length(alt_stations) > 1L ) {
+        alt_stations = paste0(alt_stations, collapse = "; ")
+        cat(glue::glue("Stations listed below have similar names:\n{alt_stations}", "\n"))
+      }
     }
-  } else if ( nrow(first_try) == 0L ) {
+  } else if ( !nrow(first_try) == 1L ) {
     station_codes = stations_dt[station_name %ilike% station, list(station_name, station_code)]
     if ( nrow(station_codes) > 1L ) {
       # Message in case more than one station matches
@@ -91,15 +121,18 @@ identify_station = function(station, verbose, harms = harmonics) {
       cat(glue::glue("Stations listed below have similar names:\n{n_stations}", "\n",
                      "Please enter one specific station"), "\n\n")
       station_code = NA_character_
+    } else if ( nrow(station_codes) == 1L ) {
+      station_code = station_codes$station_code
     } else if ( nrow(station_codes) == 0L ) {
       cat(glue::glue("Please try again: \n'{station}' did not match any existing station names"), "\n\n")
       station_code = NA_character_
     }
-  } else {
-    station_code = NA_character_
   }
   return(station_code)
 }
+
+# # Test
+# identify_station(station = "Tacoma Narr", verbose = TRUE)
 
 # Function to get reference station
 get_reference_station = function(station_code, verbose, harms = harmonics) {
@@ -198,7 +231,8 @@ harmonic_tides = function(station_code, station_info,
   # Get unique station data
   station_dt = stations_dt[station_code == station_info[[1]]]
   datum = station_dt[, station_datum]
-  meridian = station_dt[, station_meridian]
+  # meridian = station_dt[, station_meridian]
+  meridian = 0L
   # Get station_constituents data: amplitude, speed, phase
   consts = stconsts_dt[station_code == station_info[[1]], .(order, code, amplitude, phase)]
   consts = speeds_dt[consts, .(order, code, amplitude, phase, speed), on = "order"]
@@ -286,7 +320,7 @@ tide_level = function(tide_station,
                       verbose = FALSE,
                       harms = harmonics) {
   # Get station info
-  station_code = identify_station(tide_station)
+  station_code = identify_station(tide_station, verbose)
   if ( is.na(station_code) ) {
     stop("Station name is ambiguous")
   } else {
@@ -308,18 +342,19 @@ tide_level = function(tide_station,
   if ( is.null(timezone) ) {
     timezone = station_info[[3]]
   }
-  start_date = anytime::anydate(start_date)
-  end_date = anytime::anydate(end_date)
+  start_date = anytime::anydate(start_date, tz = timezone)
+  end_date = anytime::anydate(end_date, tz = timezone)
   if ( verbose == TRUE ) {
     cat(glue::glue("\nTides will be predicted from {start_date} to {end_date}\n\n"))
   }
-  final_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
-  attr(final_dts, "tzone") = timezone
-  if ( station_info[[2]] == "S" | data_interval %in% c("high-low", "high-only", "low-only") ) {
-    prediction_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
-  } else {
-    prediction_dts = final_dts
-  }
+  prediction_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
+  # final_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
+  # attr(final_dts, "tzone") = timezone
+  # if ( station_info[[2]] == "S" | data_interval %in% c("high-low", "high-only", "low-only") ) {
+  #   prediction_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
+  # } else {
+  #   prediction_dts = final_dts
+  # }
   # Update data_interval to high-low if minutes are requested and its a subordinate station
   if ( station_info[[2]] == "S" & data_interval %in% c("1-min", "6-min", "15-min", "30-min", "60-min") ) {
     data_interval = "high-low"
@@ -526,7 +561,7 @@ nd = Sys.time(); nd - tm  # 18.34023 secs
 # Test subordinate 1-min increment...get warning!
 tm = Sys.time()
 sub_point_1 = tide_level(
-  tide_station = "Whitney Point",
+  tide_station = "Whitney Point, Dabob Bay",
   start_date = "2024-01-25",
   end_date = "2024-01-26",
   data_interval = "1-min",
@@ -537,7 +572,7 @@ nd = Sys.time(); nd - tm  # 0.1433229 secs
 # Test subordinate 6-min warning, verbose true
 tm = Sys.time()
 sub_point_6 = tide_level(
-  tide_station = "Whitney Point",
+  tide_station = "Whitney Point, Dabob Bay",
   start_date = "2024-01-25",
   end_date = "2024-01-26",
   data_interval = "6-min",
@@ -548,7 +583,7 @@ nd = Sys.time(); nd - tm  # 0.145246 secs
 # Test subordinate
 tm = Sys.time()
 sub_high_low = tide_level(
-  tide_station = "Whitney Point",
+  tide_station = "Whitney Point, Dabob Bay",
   start_date = "2024-01-25",
   end_date = "2024-01-26",
   data_interval = "high-low",
@@ -559,7 +594,7 @@ nd = Sys.time(); nd - tm  # 0.1502721 secs
 # Test subordinate
 tm = Sys.time()
 sub_high = tide_level(
-  tide_station = "Whitney Point",
+  tide_station = "Whitney Point, Dabob Bay",
   start_date = "2024-01-25",
   end_date = "2024-01-26",
   data_interval = "high-only",
@@ -570,7 +605,7 @@ nd = Sys.time(); nd - tm  # 0.153089 secs
 # Test subordinate
 tm = Sys.time()
 sub_low = tide_level(
-  tide_station = "Whitney Point",
+  tide_station = "Whitney Point, Dabob Bay",
   start_date = "2024-01-25",
   end_date = "2024-01-26",
   data_interval = "low-only",

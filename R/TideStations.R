@@ -38,10 +38,10 @@ identify_station = function(station, verbose, harms = MarineTides::harmonics) {
       alt_stations = alt_names$station_name[!alt_names$station_name == station]
       if ( length(alt_stations) > 1L ) {
         alt_stations = paste0(alt_stations, collapse = "; ")
-        cat(glue::glue("{station} works! But since you asked, here are some similar names:\n{alt_stations}", "\n"))
+        cat(glue::glue("Stations listed below have similar names:\n{alt_stations}", "\n"))
       }
     }
-  } else if ( nrow(first_try) == 0L ) {
+  } else if ( !nrow(first_try) == 1L ) {
     station_codes = stations_dt[station_name %ilike% station, list(station_name, station_code)]
     if ( nrow(station_codes) > 1L ) {
       # Message in case more than one station matches
@@ -50,12 +50,12 @@ identify_station = function(station, verbose, harms = MarineTides::harmonics) {
       cat(glue::glue("Stations listed below have similar names:\n{n_stations}", "\n",
                      "Please enter one specific station"), "\n\n")
       station_code = NA_character_
+    } else if ( nrow(station_codes) == 1L ) {
+      station_code = station_codes$station_code
     } else if ( nrow(station_codes) == 0L ) {
       cat(glue::glue("Please try again: \n'{station}' did not match any existing station names"), "\n\n")
       station_code = NA_character_
     }
-  } else {
-    station_code = NA_character_
   }
   return(station_code)
 }
