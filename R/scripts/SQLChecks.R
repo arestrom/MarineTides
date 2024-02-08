@@ -122,12 +122,14 @@ load("data/harmonics.rda")
 
 # Get all basic info
 qry = glue("select s.station_code, ss.station_code as ref_station_code, s.station_name, ",
-           "st.station_type_code, s.time_meridian, s.tide_type, s.datum_msl_meter, ",
+           "ST_Y (s.geog::geometry) as lat, ST_X (s.geog::geometry) as lng, ",
+           "rg.region_code, st.station_type_code, s.time_meridian, s.tide_type, s.datum_msl_meter, ",
            "s.dst_observed, s.established, s.removed, s.epoch_start, s.epoch_end, ",
            "so.height_offset_factor_high_tide as high_factor, so.time_offset_low_tide_minutes as high_time, ",
            "so.height_offset_factor_low_tide as low_factor, so.time_offset_low_tide_minutes as low_time ",
            "from station as s ",
            "left join station_type_lut as st on s.station_type_id = st.station_type_id ",
+           "left join region_lut as rg on s.region_id = rg.region_id ",
            "left join station_offsets as so on s.station_id = so.station_id ",
            "left join station as ss on so.reference_station_id = ss.station_id ",
            "where s.station_code is not null")
@@ -268,6 +270,7 @@ rtide_tides_loop = function(station_list, start_date, end_date, time_interval = 
 
 # rtide functions ==============================
 
+# Useful to test ability to get names
 mtide_tides_loop = function(station_list, start_date, end_date, data_interval = "60-min") {
   all_tides = NULL
   for ( i in seq_along(station_list$station_code) ) {
@@ -287,6 +290,31 @@ mtide_tides_loop = function(station_list, start_date, end_date, data_interval = 
   }
   return(all_tides)
 }
+
+# # Also useful, but will go directly to code
+# mtide_tides_loop = function(station_list, start_date, end_date, data_interval = "60-min") {
+#   all_tides = NULL
+#   for ( i in seq_along(station_list$station_code) ) {
+#     st_namei = station_list$station_name[i]
+#     st_codei = station_list$station_code[i]
+#     station_code = tryCatch(MarineTides::identify_station(st_namei, verbose = FALSE), error = function(e) {return(NA)})
+#     if ( is.na(station_code[1]) ) {
+#       harms = MarineTides::harmonics
+#       stations_dt = as.data.table(harms$st_data)
+#       st_names = stations_dt[station_code == st_codei, list(station_name, station_code)]
+#       st_namei = st_names$station_code
+#     }
+#     mtidei = MarineTides::tide_level(tide_station = st_namei,
+#                                      start_date,
+#                                      end_date,
+#                                      data_interval,
+#                                      timezone = "UTC")
+#     names(mtidei) = c("station_code", "mstation_name", "reference_station_code",
+#                       "tide_type", "tide_time", "mtide_level")
+#     all_tides = rbind(mtidei, all_tides)
+#   }
+#   return(all_tides)
+# }
 
 #==================================================================================
 # Run the loop functions
@@ -312,7 +340,7 @@ harms_mtide = mtide_tides_loop(harms_time_off,
                                end_date = "2024-02-06")
 
 # Get the initial data back
-harms_noaa = merge(harms_now_time_off, harms_time_off_noaa,
+harms_noaa = merge(harms_now_time_off, harms_noaa,
                    by = "station_code", all.x = TRUE)
 
 # Join rtide and noaa as comb_tide
@@ -327,13 +355,50 @@ comb_tide = comb_tide[, c("station_name", "station_code", "time_meridian", "esta
                           "rtide_level", "mtide_level")]
 
 # Print station names
-unique(comb_tide$mstation_name)
+unique(comb_tide$station_name)
+
+#==================================================================================
+# Plot Tacoma as a check
+#==================================================================================
 
 # Plot Tacoma
-check_tide = comb_tide[mstation_name == "Tacoma"]
+check_tide = comb_tide[station_name == "Tacoma"]
 plot(check_tide$tide_time, check_tide$tide_level, type = "l", col = "blue")
 lines(check_tide$tide_time, check_tide$rtide_level, col = "red")
 lines(check_tide$tide_time, check_tide$mtide_level, col = "green")
+
+#==================================================================================
+# Identify differences
+#==================================================================================
+
+# Round tide hts   MTIDES LOOKS EXCELLENT !!!!
+comb_tide$rtide_level = round(comb_tide$rtide_level, digits = 3)
+comb_tide$mtide_level = round(comb_tide$mtide_level, digits = 3)
+comb_tide$difr = abs(comb_tide$tide_level - comb_tide$rtide_level)
+comb_tide$difm = abs(comb_tide$tide_level - comb_tide$mtide_level)
+
+# Check the one missing Charleston, Oregon....Need to re-import harmonics
+charelston = MarineTides::tide_level("Charleston",
+                                     start_date = "2024-02-06",
+                                     end_date = "2024-02-06",
+                                     data_interval = "60-min",
+                                     timezone = "UTC",
+                                     verbose = TRUE)
+
+# Check if any other station_names clash
+dup_names = all_stations$station_name[duplicated(all_stations$station_name)]
+dup_stations = subset(all_stations, station_name %in% dup_names)
+dup_stations = dup_stations[order(dup_stations$station_name),]
+
+
+
+
+
+
+
+
+
+
 
 
 

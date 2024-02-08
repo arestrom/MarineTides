@@ -20,6 +20,8 @@
 #  2. Create a tide calendar function?
 #  3. Create a colored, clickable squares, annual calendar function?
 #  4. See if I can dump start and end dates from harmonic_tides()
+#  5. IMPORTANT: Add note in output if station has been removed !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#  6. MAKE SURE THERE ARE NO DUPLICATE STATIONS. WORKING ON IT NOW !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
 #  Packaging issues:
 #  1 https://stackoverflow.com/questions/10527072/using-data-table-package-inside-my-own-package
@@ -337,8 +339,6 @@ tide_level = function(tide_station,
   } else {
     pred_inc = 1L
   }
-  # Generate vector of requested datetimes, based on data_interval and station_type
-  # May not need final_dts
   if ( is.null(timezone) ) {
     timezone = station_info[[3]]
   }
@@ -348,26 +348,16 @@ tide_level = function(tide_station,
     cat(glue::glue("\nTides will be predicted from {start_date} to {end_date}\n\n"))
   }
   prediction_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
-  # final_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
-  # attr(final_dts, "tzone") = timezone
-  # if ( station_info[[2]] == "S" | data_interval %in% c("high-low", "high-only", "low-only") ) {
-  #   prediction_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
-  # } else {
-  #   prediction_dts = final_dts
-  # }
   # Update data_interval to high-low if minutes are requested and its a subordinate station
   if ( station_info[[2]] == "S" & data_interval %in% c("1-min", "6-min", "15-min", "30-min", "60-min") ) {
     data_interval = "high-low"
     warning("\nFor subordinate stations, only high and low tide values will be computed.\n")
   }
   # Generate harmonic tides, either for reference or subordinate station
-  tide_pred = harmonic_tides(station_code,
-                             station_info,
+  tide_pred = harmonic_tides(station_code, station_info,
                              start_date, end_date,
-                             prediction_dts,
-                             timezone,
-                             verbose,
-                             harms)
+                             prediction_dts, timezone,
+                             verbose, harms)
   # Generate high_low values for subordinate stations or harmonic stations where high_low requested
   if ( station_info[[2]] == "S" | data_interval %in% c("high-low", "high-only", "low-only") ) {
     hl_tides = high_low_tides(tide_pred, data_interval, tide_station)
@@ -400,7 +390,7 @@ load("data/harmonics.rda")
 
 # Test one min harmonic
 tm = Sys.time()
-harm_point_1 = tide_level(
+harm_seattle = tide_level(
   tide_station = "Seattle",
   start_date = as.Date("2024-01-25"),
   end_date = as.Date("2024-01-26"),
@@ -408,6 +398,21 @@ harm_point_1 = tide_level(
   verbose = TRUE
 )
 nd = Sys.time(); nd - tm  # 0.12431 secs
+
+# Test one min harmonic Tacoma
+tm = Sys.time()
+harm_tacoma = tide_level(
+  tide_station = "Tacoma",
+  start_date = as.Date("2024-01-25"),
+  end_date = as.Date("2024-01-26"),
+  data_interval = "1-min",
+  verbose = TRUE
+)
+nd = Sys.time(); nd - tm  # 0.12431 secs
+
+# # Plot Seattle vs Tacoma
+# plot(harm_seattle$tide_time, harm_seattle$tide_level, type = "l", col = "blue")
+# lines(harm_tacoma$tide_time, harm_tacoma$tide_level, col = "red")
 
 # Test harmonic
 tm = Sys.time()
