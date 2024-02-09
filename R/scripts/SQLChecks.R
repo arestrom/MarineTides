@@ -385,7 +385,7 @@ charelston = MarineTides::tide_level("Charleston",
                                      timezone = "UTC",
                                      verbose = TRUE)
 
-# Check if any other station_names clash
+# Check if any other station_names clash....None left after fixup in TideHarmonicsDB/R/harmonics_cleanup.R
 dup_names = all_stations$station_name[duplicated(all_stations$station_name)]
 dup_stations = subset(all_stations, station_name %in% dup_names)
 dup_stations = dup_stations[order(dup_stations$station_name),]
