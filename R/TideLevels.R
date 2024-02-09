@@ -21,7 +21,7 @@
 #' The `harmonics` dataset contains information for over three thousand harmonic and subordinate
 #' tide stations worldwide. Most stations are located in the United States, but stations are also
 #' included for locations adjacent to USA territories in the Pacific Ocean and the Carribbean.
-#' The internal [MarineTides::identify_station()] function uses the [data.table::%like%] function
+#' The internal [MarineTides::identify_station()] function uses the [data.table::%ilike%] function
 #' to identify stations in the `harmonics` dataset with similar names. Unless you know the exact
 #' station name, it is usually better to enter just the first few letters of the station name.
 #' This will return a message in the R console with a list of possible matches.
@@ -31,12 +31,12 @@
 #' `2024-03-29`, `3/29/2024`, `20240329`, `2024.03.29` will return the expected values, but
 #' entries such as `29/3/2024` or `3/3/24` will fail to parse and result in an error. Toggeling
 #' the `verbose` argument to `TRUE` will send a message to the R-console displaying the start and
-#' end dates requested.
+#' end dates requested, or as least the dates the function thought you intended.
 #'
 #' The `data_interval` variable includes options similar to those available when requesting
 #' tide data from the NOAA Tides and Currents website. For harmonic stations, the same set of
 #' increments from 1 minute, to 60 minutes are provided. You can also request only highs, only
-#' lows, or both. For subordinate stations NOAA only allows the latter three options. Because
+#' lows, or both. For subordinate stations, NOAA only allows the latter three options. Because
 #' tide predictions for subordinate stations are only defined in terms of offsets from the daily
 #' high and low values, it would be speculative at best to infer tide levels, or tide times,
 #' for other intervals. The shape of tidal curves between highs and lows at subordinate stations
@@ -155,10 +155,8 @@ tide_level = function(tide_station = "Seattle",
 #' @export
 harmonic_tides = function(station_code, station_info,
                           start_date, end_date,
-                          prediction_dts,
-                          timezone,
-                          verbose,
-                          harms) {
+                          prediction_dts, timezone,
+                          verbose, harms) {
   stations_dt = as.data.table(harms$st_data)
   offsets_dt = as.data.table(harms$st_offsets)
   stconsts_dt = as.data.table(harms$st_constituents)

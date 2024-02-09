@@ -220,10 +220,8 @@ find_peaks = function (x, m = 3){
 # Function to generate harmonic tides
 harmonic_tides = function(station_code, station_info,
                           start_date, end_date,
-                          prediction_dts,
-                          timezone,
-                          verbose,
-                          harms) {
+                          prediction_dts, timezone,
+                          verbose, harms) {
   # Convert harmonics data to DT...maybe preconfigure in harms?
   stations_dt = data.table(harms$st_data)
   offsets_dt = data.table(harms$st_offsets)

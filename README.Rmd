@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-`MarineTides` is an `R` package that can be used to generate tide predictions for 3,336 tide stations worldwide. The majority of these stations are located in the United States, but others are located in areas adjacent to American territories in the Pacific Ocean and Carribbean. This includes places such as the Marshall Islands, Fiji, Cuba, and the Virgin Islands. Both harmonic and subordinate tide stations are included. All station data included in the package were downloaded from the [NOAA CO-OPS API for Data Retrieval](https://api.tidesandcurrents.noaa.gov/api/prod/#products).
+The `MarineTides` package can be used to generate tide predictions for 3,336 tide stations worldwide. The majority of these stations are located in the United States, but others are located in areas adjacent to American territories in the Pacific Ocean and Carribbean. This includes places such as the Marshall Islands, Fiji, Cuba, and the Virgin Islands. Both harmonic and subordinate tide stations are included. All station data included in the package were downloaded from the [NOAA CO-OPS API for Data Retrieval](https://api.tidesandcurrents.noaa.gov/api/prod/#products).
 
 For tide stations where [NOAA CO-OPS](https://api.tidesandcurrents.noaa.gov/api/prod/#products) provide harmonics data, predictions can be made at intervals from one minute to one hour. This is modeled on the options available from [NOAA Tides & Currents](https://tidesandcurrents.noaa.gov/) Alternately, values can also be generated for just daily high and low tides. 
 
