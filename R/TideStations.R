@@ -100,8 +100,8 @@ get_reference_station = function(station_code, verbose, harms = MarineTides::har
                      "USE WITH CAUTION!"), "\n\n")
     }
     if ( verbose == TRUE ) {
-      cat(glue::glue("{station_dt$station_name} is a reference station. Tide heights are", "\n ",
-                     "calculated from {station_dt$station_name} harmonic constituents."), "\n\n")
+      warning(cat(glue::glue("{station_dt$station_name} is a reference station. Tide heights are", "\n ",
+                     "calculated from {station_dt$station_name} harmonic constituents."), "\n\n"))
     }
   } else {
     ref_station_code = offsets_dt[station_code == station_cd, reference_station_code]
