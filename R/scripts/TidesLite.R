@@ -8,20 +8,19 @@
 #  5. See if I can get timezone from harms --Done
 #
 # ToDo:
-#  1. Fix the identify_stations function. Way too convoluted, and not fully working.
-#  2. Why are Tacoma tides off...both RTide and Mine....similar outputs. Look at
+#  1. Fix the identify_stations function. Way too convoluted, and not fully working.     --Done
+#  2. Why are Tacoma tides off...both RTide and Mine....similar outputs. Look at         --Done
 #     time_meridian and timezone offsets first. See how many have non-zero meridians.
-#     RESULT: Issue fixed when time-meridian set to zero. Check here first then fix
-#             in database! Set all meridians to zero if harmonic.
+#     RESULT: Issue fixed when time-meridian set to zero.
+#  3. Dump start and end dates from harmonic_tides()? No, data is needed.                --Done
+#  4. Add warning for harmonic stations that have been removed!
+#  5. Fix database to eliminate duplicate station names.                                 --Done
 #
 #  NEXT:
 #  1. Create function to plot high-low data, using spline, or combo?
 #     Possibly time from HL function, then spline?
 #  2. Create a tide calendar function?
 #  3. Create a colored, clickable squares, annual calendar function?
-#  4. See if I can dump start and end dates from harmonic_tides()
-#  5. IMPORTANT: Add note in output if station has been removed !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#  6. MAKE SURE THERE ARE NO DUPLICATE STATIONS. WORKING ON IT NOW !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
 #  Packaging issues:
 #  1 https://stackoverflow.com/questions/10527072/using-data-table-package-inside-my-own-package
@@ -145,6 +144,7 @@ get_reference_station = function(station_code, verbose, harms = harmonics) {
   station_type = station_dt[, station_type]
   station_name = station_dt[, station_name]
   station_timezone = station_dt[, timezone]
+  station_removed = station_dt[, ]
   if ( station_type == "H" ) {
     ref_station_code = list(station_cd, station_type, station_timezone)
     if ( verbose == TRUE ) {

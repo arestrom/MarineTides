@@ -1,7 +1,7 @@
 #====================================================================================
 # Output harmonics data in .rda format for MarineTides package
 #
-# Notes: 
+# Notes:
 #  1. Can't include sqlite in package. Create .rda files instead.
 #  2. https://stackoverflow.com/questions/22531477/using-lists-inside-data-table-columns
 #  3. See: https://beckmw.wordpress.com/2017/04/12/predicting-tides-in-r/
@@ -58,7 +58,7 @@ get_stations = function() {
                    "s.datum_msl_meter as station_datum, ",
                    "ST_Y (s.geog::geometry) as lat, ",
                    "ST_X (s.geog::geometry) as lng, ",
-                   "s.timezone, ",
+                   "s.timezone, s.removed, ",
                    "st.station_type_code as station_type ",
                    "from station as s ",
                    "inner join station_type_lut as st ",
