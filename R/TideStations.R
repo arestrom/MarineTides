@@ -91,8 +91,14 @@ get_reference_station = function(station_code, verbose, harms = MarineTides::har
   station_type = station_dt[, station_type]
   station_name = station_dt[, station_name]
   station_timezone = station_dt[, timezone]
+  station_removed = station_dt[, removed]
   if ( station_type == "H" ) {
     ref_station_code = list(station_cd, station_type, station_timezone)
+    if ( !is.na(station_removed) ) {
+      station_removed = format(station_removed, format = '%m/%d/%Y')
+      cat(glue::glue("{station_dt$station_name} tide station is no longer active. It was removed on {station_removed}.", "\n ",
+                     "USE WITH CAUTION!"), "\n\n")
+    }
     if ( verbose == TRUE ) {
       cat(glue::glue("{station_dt$station_name} is a reference station. Tide heights are", "\n ",
                      "calculated from {station_dt$station_name} harmonic constituents."), "\n\n")

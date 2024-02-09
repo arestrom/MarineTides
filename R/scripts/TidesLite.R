@@ -133,7 +133,7 @@ identify_station = function(station, verbose, harms = MarineTides::harmonics) {
 }
 
 # # Test
-# identify_station(station = "Tacoma Narr", verbose = TRUE)
+# (station_code = identify_station(station = "ABERDEEN", verbose = TRUE))
 
 # Function to get reference station
 get_reference_station = function(station_code, verbose, harms = harmonics) {
@@ -144,9 +144,14 @@ get_reference_station = function(station_code, verbose, harms = harmonics) {
   station_type = station_dt[, station_type]
   station_name = station_dt[, station_name]
   station_timezone = station_dt[, timezone]
-  station_removed = station_dt[, ]
+  station_removed = station_dt[, removed]
   if ( station_type == "H" ) {
     ref_station_code = list(station_cd, station_type, station_timezone)
+    if ( !is.na(station_removed) ) {
+      station_removed = format(station_removed, format = '%m/%d/%Y')
+      cat(glue::glue("{station_dt$station_name} tide station is no longer active. It was removed on {station_removed}.", "\n ",
+                     "USE WITH CAUTION!"), "\n\n")
+    }
     if ( verbose == TRUE ) {
       cat(glue::glue("{station_dt$station_name} is a reference station. Tide heights are", "\n ",
                      "calculated from {station_dt$station_name} harmonic constituents."), "\n\n")
@@ -165,6 +170,9 @@ get_reference_station = function(station_code, verbose, harms = harmonics) {
   }
   return(ref_station_code)
 }
+
+# # Test
+# (ref_station_code = get_reference_station(station_code, verbose = FALSE))
 
 # Function to generate prediction span vector
 get_prediction_range = function(start_date, end_date, pred_inc, timezone) {
@@ -381,6 +389,7 @@ tide_level = function(tide_station,
 
 # Load harmonics data
 load("data/harmonics.rda")
+harms = harmonics
 
 #====================================================================
 # Test various combinations of inputs for harmonic station
