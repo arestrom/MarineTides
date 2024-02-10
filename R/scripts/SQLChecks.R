@@ -580,12 +580,12 @@ max(comb_tide_fh$difm, na.rm = TRUE)
 # Test foreign subordinate stations vs rtide and noaa
 #==================================================================================
 
-# Check a couple stations that did not run in mtides below
-MarineTides::identify_station("APIA (Observatory), Upolu Island", verbose = TRUE)
-MarineTides::tide_level(tide_station = "APIA (Observatory), Upolu Island",
-                        start_date = "2024-02-06",
-                        end_date = "2024-02-06",
-                        data_interval = "high-low")
+# # Check a couple stations that did not run in mtides below
+# MarineTides::identify_station("APIA (Observatory), Upolu Island", verbose = TRUE)
+# MarineTides::tide_level(tide_station = "APIA (Observatory), Upolu Island",
+#                         start_date = "2024-02-06",
+#                         end_date = "2024-02-06",
+#                         data_interval = "high-low")
 
 # Pull out subset with names and codes
 subs_foreign = foreign_sts[,c("station_code", "station_name")]

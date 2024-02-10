@@ -16,6 +16,7 @@ NULL
 
 ## quiets concerns of R CMD check re: the .'s and vars in data.table
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("timezone",
+                                                        "removed",
                                                         "reference_station_code",
                                                         "station_name",
                                                         "station_datum",
