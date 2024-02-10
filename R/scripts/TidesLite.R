@@ -319,6 +319,16 @@ subordinate_tides = function(hl_tides, harms) {
   return(tide_hl)
 }
 
+# Test
+tide_station = "APIA (Observatory), Upolu Island"
+start_date = "2024-02-06"
+end_date = "2024-02-06"
+data_interval = "high-low"
+timezone = NULL
+verbose = TRUE
+harms = MarineTides::harmonics
+
+
 # Initial wrapper function
 tide_level = function(tide_station,
                       start_date = Sys.Date(),

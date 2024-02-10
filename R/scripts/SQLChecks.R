@@ -3,7 +3,7 @@
 #
 #  Notes:
 #  1. I checked Station info for Tacoma. No notes about station being removed
-#     Using time_meridian = 0, I am getting perfect match with NOAA predictions
+#     Using time_meridian = 0, getting perfect match with NOAA predictions
 #  2. For stations with < 37 constants, mtide matched noaa, rtide somewhat worse.
 #  3. Needed to remove 9450623 Big Salt Lake, AK. No harmonics data even though
 #     it is listed as a harmonic station. No predictions on NOAA website. Get
@@ -19,11 +19,9 @@
 #  7. For now, filter out stations with meridians other than 0?  --No, when set to zero, output correct.
 #  8. Redo harmonics data to eliminate unneeded harmonic stations. --No will keep, but warn if removed!
 #  9. Rewrite docs to give new counts.
-# 10 Add high offsets to output above for added info.
-# 11 Use regex to id stations? Also, lower case?
-# 12 Use region to get added info?
-# 13 Could use leaflet tools to find stations in search box
-# 14 Maybe just use a markdown page an an interface?
+# 10. Use leaflet tools to find stations in search box?
+# 11. Use a markdown page an an interface?
+# 12. Do foreign station predictions match NOAA web output?
 #
 # AS 2024-02-05
 #====================================================================================
@@ -128,8 +126,8 @@ pg_con_local = function(dbname, port = '5433') {
 # Get all basic info
 qry = glue("select s.station_code, ss.station_code as ref_station_code, s.station_name, ",
            "ST_Y (s.geog::geometry) as lat, ST_X (s.geog::geometry) as lng, ",
-           "rg.region_code, st.station_type_code, s.time_meridian, s.tide_type, s.datum_msl_meter, ",
-           "s.dst_observed, s.established, s.removed, s.epoch_start, s.epoch_end, ",
+           "rg.region_code, rg.country_name, st.station_type_code, s.time_meridian, s.tide_type, ",
+           "s.datum_msl_meter, s.dst_observed, s.established, s.removed, s.epoch_start, s.epoch_end, ",
            "so.height_offset_factor_high_tide as high_factor, so.time_offset_low_tide_minutes as high_time, ",
            "so.height_offset_factor_low_tide as low_factor, so.time_offset_low_tide_minutes as low_time ",
            "from station as s ",
@@ -213,6 +211,15 @@ harms_now_time_off = harms_now[!time_meridian == 0L]; nrow(harms_now_time_off)
 
 # NOAA functions ==============================
 
+# station_code = "1778000"
+# #station_code = "9441187"
+# start_date = "2024-02-06"
+# end_date = "2024-02-06"
+# time_interval = 60L
+#
+# # Test
+# noaa_tides(station_code, start_date, end_date, time_interval = "60")
+
 # Construct function to get one days worth of predictions at one station from noaa
 noaa_tides = function(station_code, start_date, end_date, time_interval) {
   st_code = station_code
@@ -231,8 +238,13 @@ noaa_tides = function(station_code, start_date, end_date, time_interval) {
     noaa_tides = tryCatch(read.csv(full_url), error = function(e) {return(NA)})
   }
   noaa_tides$station_code = st_code
-  names(noaa_tides) = c("tide_time", "tide_level", "station_code")
-  tides_out = noaa_tides[, c("tide_time", "station_code", "tide_level")]
+  if ( !time_interval == "hilo" ) {
+    noaa_tides$tide_type = "P"
+    names(noaa_tides) = c("tide_time", "tide_level",  "station_code", "tide_type")
+  } else {
+    names(noaa_tides) = c("tide_time", "tide_level", "tide_type", "station_code")
+  }
+  tides_out = noaa_tides[, c("tide_time", "station_code", "tide_type", "tide_level")]
   return(tides_out)
 }
 
@@ -487,10 +499,159 @@ max(comb_tide_mc$difr, na.rm = TRUE)
 # Max difference for mtide: Result: 0.001m, just rounding error.
 max(comb_tide_mc$difm, na.rm = TRUE)
 
+#==================================================================================
+# Pull out foreign stations to test vs rtide and noaa
+#==================================================================================
+
+# Get foreign stations
+foreign_st = subset(all_stations, !country_name == "United States")
+
+# Get foreign harmonic stations
+foreign_sth = subset(foreign_st, station_type_code == "H")
+
+# Get foreign subordinate stations
+foreign_sts = subset(foreign_st, station_type_code == "S")
+
+# Check if all foreign_sts reference stations are in all_stations: Result, all present
+all(foreign_sts$station_code %in% all_stations$station_code)
+
+#==================================================================================
+# Test foreign harmonic stations vs rtide and noaa
+#==================================================================================
+
+# Pull out subset with names and codes
+harms_foreign = foreign_sth[,c("station_code", "station_name")]
+
+# Get noaa predictions
+tm = Sys.time()
+harms_noaa = noaa_tides_loop(harms_foreign,
+                             start_date = "2024-02-06",
+                             end_date = "2024-02-06",
+                             time_interval = "60")
+nd = Sys.time(); nd - tm  # 26.24402 secs
+
+# Get all rtide predictions
+tm = Sys.time()
+harms_rtide = rtide_tides_loop(harms_foreign,
+                               start_date = "2024-02-06",
+                               end_date = "2024-02-06")
+nd = Sys.time(); nd - tm  # 0.1125519 secs
+
+# Get all mtide predictions
+tm = Sys.time()
+harms_mtide = mtide_tides_loop(harms_foreign,
+                               start_date = "2024-02-06",
+                               end_date = "2024-02-06")
+nd = Sys.time(); nd - tm  # 0.3823662 secs
+
+# Get the initial data back
+harms_noaa = merge(foreign_sth, harms_noaa,
+                   by = "station_code", all.x = TRUE)
+
+# Join rtide and noaa as comb_tide
+harms_noaa$tide_time = as.POSIXct(harms_noaa$tide_time, tz = "UTC")
+comb_tide_fh = merge(harms_noaa, harms_rtide, by = c("station_code", "tide_time"), all.x = TRUE)
+
+# Join mtide to comb_tide
+harms_mtide = harms_mtide[, .(station_code, tide_time, mtide_level)]
+comb_tide_fh = merge(comb_tide_fh, harms_mtide, by = c("station_code", "tide_time"), all.x = TRUE)
+comb_tide_fh = comb_tide_fh[, c("station_name", "station_code", "time_meridian", "established", "removed",
+                                "epoch_start", "epoch_end", "n_consts", "tide_time", "tide_level",
+                                "rtide_level", "mtide_level")]
+
+#==================================================================================
+# Identify differences on harms with less than 37 consts
+#==================================================================================
+
+# Round tide hts   MTIDES LOOKS EXCELLENT !!!!
+comb_tide_fh$rtide_level = round(comb_tide_fh$rtide_level, digits = 3)
+comb_tide_fh$mtide_level = round(comb_tide_fh$mtide_level, digits = 3)
+comb_tide_fh$difr = abs(comb_tide_fh$tide_level - comb_tide_fh$rtide_level)
+comb_tide_fh$difm = abs(comb_tide_fh$tide_level - comb_tide_fh$mtide_level)
+
+# Max difference for rtide: Result: 0.018m, Noticable = 0.059ft
+max(comb_tide_fh$difr, na.rm = TRUE)
+0.018 / 0.3048
+
+# Max difference for mtide: Result: 0.001m, just rounding error.
+max(comb_tide_fh$difm, na.rm = TRUE)
+
+#==================================================================================
+# Test foreign subordinate stations vs rtide and noaa
+#==================================================================================
+
+# Check a couple stations that did not run in mtides below
+MarineTides::identify_station("APIA (Observatory), Upolu Island", verbose = TRUE)
+MarineTides::tide_level(tide_station = "APIA (Observatory), Upolu Island",
+                        start_date = "2024-02-06",
+                        end_date = "2024-02-06",
+                        data_interval = "high-low")
+
+# Pull out subset with names and codes
+subs_foreign = foreign_sts[,c("station_code", "station_name")]
+
+# Get noaa predictions
+tm = Sys.time()
+subs_noaa = noaa_tides_loop(subs_foreign,
+                            start_date = "2024-02-06",
+                            end_date = "2024-02-06",
+                            time_interval = "hilo")
+nd = Sys.time(); nd - tm  # 53.20814 secs
+
+# Identify any missing stations: None
+length(unique(subs_foreign$station_code))
+length(unique(subs_noaa$station_code))
+
+# Inspect...Malakal Harbor failed. No predictions, remove
+subs_noaa = subset(subs_noaa, !is.na(tide_level))
+
+# Add id variables to allow comparison
+subs_noaa_dt = as.data.table(subs_noaa)
+subs_noaa_dt$id = rowidv(subs_noaa_dt, cols = c("station_code", "tide_type"))
+subs_noaa_dt = subs_noaa_dt[, hl_tides := paste0(tide_type, "-", id)]
+subs_noaa_dt = subs_noaa_dt[, .(station_code, hl_tides, noaa_tide_time = tide_time, noaa_tide_level = tide_level)]
+
+# Get all mtide predictions
+tm = Sys.time()
+subs_mtide = mtide_tides_loop(subs_foreign,
+                              start_date = "2024-02-06",
+                              end_date = "2024-02-06",
+                              data_interval = "high-low")
+nd = Sys.time(); nd - tm  # 0.7298121 sec
+
+# Identify any missing stations: Result: 8 missing
+length(unique(subs_mtide$station_code))
+missing_subs = subs_foreign$station_code[!subs_foreign$station_code %in% subs_mtide$station_code]
+missing_foreign_sts = subset(foreign_sts, station_code %in% missing_subs)
+
+# Get the initial data back
+subs_noaa = merge(foreign_sts, subs_noaa,
+                   by = "station_code", all.x = TRUE)
 
 
 
+# Join rtide and noaa as comb_tide
+subs_noaa$tide_time = as.POSIXct(subs_noaa$tide_time, tz = "UTC")
+subs_mtide = subs_mtide[, .(station_code, tide_time, mtide_level)]
+comb_tide_fs = merge(subs_noaa, subs_mtide, by = c("station_code", "tide_time"), all.x = TRUE)
+comb_tide_fs = comb_tide_fs[, c("station_name", "station_code", "time_meridian", "established", "removed",
+                                "epoch_start", "epoch_end", "n_consts", "tide_time", "tide_level",
+                                "mtide_level")]
 
+#==================================================================================
+# Identify differences on subs from foreign stations
+#==================================================================================
+
+# Round tide hts   MTIDES LOOKS EXCELLENT !!!!
+comb_tide_fs$mtide_level = round(comb_tide_fs$mtide_level, digits = 3)
+comb_tide_fs$difm = abs(comb_tide_fs$tide_level - comb_tide_fs$mtide_level)
+
+# Max difference for rtide: Result: 0.018m, Noticable = 0.059ft
+max(comb_tide_fh$difr, na.rm = TRUE)
+0.018 / 0.3048
+
+# Max difference for mtide: Result: 0.001m, just rounding error.
+max(comb_tide_fh$difm, na.rm = TRUE)
 
 
 #=================================================================================
