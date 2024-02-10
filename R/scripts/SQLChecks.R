@@ -598,12 +598,13 @@ subs_noaa = noaa_tides_loop(subs_foreign,
                             time_interval = "hilo")
 nd = Sys.time(); nd - tm  # 53.20814 secs
 
-# Identify any missing stations: None
+# Identify any missing stations: None: Got some errors that relooped till successful.
+# All data were retrieved as intended. No more errors for Malakal, or APIA
 length(unique(subs_foreign$station_code))
 length(unique(subs_noaa$station_code))
 
-# Inspect...Malakal Harbor failed. No predictions, remove
-subs_noaa = subset(subs_noaa, !is.na(tide_level))
+# # Inspect...Malakal Harbor failed. No predictions, remove
+# subs_noaa = subset(subs_noaa, !is.na(tide_level))
 
 # Add id variables to allow comparison
 subs_noaa_dt = as.data.table(subs_noaa)

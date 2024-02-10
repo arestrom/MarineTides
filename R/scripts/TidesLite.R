@@ -320,7 +320,7 @@ subordinate_tides = function(hl_tides, harms) {
 }
 
 # Test
-tide_station = "APIA (Observatory), Upolu Island"
+tide_station = "Asau Harbor, Savaii Island"
 start_date = "2024-02-06"
 end_date = "2024-02-06"
 data_interval = "high-low"
