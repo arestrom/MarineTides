@@ -244,14 +244,22 @@ high_low_tides = function(tide_pred, data_interval, tide_station) {
 
 # Apply offsets for subordinate stations
 subordinate_tides = function(hl_tides, harms) {
-  offsets_dt = as.data.table(harms$st_offsets)
+  offsets_dt = data.table(harms$st_offsets)
   offsets_dt = offsets_dt[station_code == hl_tides$station_code[1]]
-  tide_hl = cbind(offsets_dt, hl_tides[, list(tide_type, tide_time, tide_level)])
-  tide_hl[tide_type == "H", ':=' (offset_time = tide_time + (time_offset_high_tide_minutes * 60),
-                                  offset_level = tide_level * height_offset_factor_high_tide)]
-  tide_hl[tide_type == "L", ':=' (offset_time = tide_time + (time_offset_low_tide_minutes * 60),
-                                  offset_level = tide_level * height_offset_factor_low_tide)]
-  tide_hl = tide_hl[, list(station_code, station_name, reference_station_code, tide_type,
-                           tide_time = offset_time, tide_level = offset_level)]
+  height_offset_type = offsets_dt[, height_offset_type]
+  tide_hl = cbind(offsets_dt, hl_tides[, .(tide_type, tide_time, tide_level)])
+  if ( height_offset_type == "R" ) {
+    tide_hl[tide_type == "H", ':=' (offset_time = tide_time + (time_offset_high_tide_minutes * 60),
+                                    offset_level = tide_level * height_offset_high_tide)]
+    tide_hl[tide_type == "L", ':=' (offset_time = tide_time + (time_offset_low_tide_minutes * 60),
+                                    offset_level = tide_level * height_offset_low_tide)]
+  } else {
+    tide_hl[tide_type == "H", ':=' (offset_time = tide_time + (time_offset_high_tide_minutes * 60),
+                                    offset_level = tide_level + height_offset_high_tide)]
+    tide_hl[tide_type == "L", ':=' (offset_time = tide_time + (time_offset_low_tide_minutes * 60),
+                                    offset_level = tide_level + height_offset_low_tide)]
+  }
+  tide_hl = tide_hl[, .(station_code, station_name, reference_station_code, tide_type,
+                        tide_time = offset_time, tide_level = offset_level)]
   return(tide_hl)
 }

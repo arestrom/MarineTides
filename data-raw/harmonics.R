@@ -102,8 +102,9 @@ constituent_speed = get_constituent_speed()
 get_station_offsets = function() {
   qry = glue::glue("select s.station_code, s.station_name, ",
                    "ss.station_code as reference_station_code, ",
-                   "so.height_offset_factor_high_tide, ",
-                   "so.height_offset_factor_low_tide, ",
+                   "ha.adjusted_type_code as height_offset_type, ",
+                   "so.height_offset_high_tide, ",
+                   "so.height_offset_low_tide, ",
                    "so.time_offset_high_tide_minutes, ",
                    "so.time_offset_low_tide_minutes ",
                    "from station as s ",
@@ -111,6 +112,8 @@ get_station_offsets = function() {
                    "on s.station_id = so.station_id ",
                    "inner join station as ss ",
                    "on so.reference_station_id = ss.station_id ",
+                   "inner join height_adjusted_type_lut as ha ",
+                   "on so.height_adjusted_type_id = ha.height_adjusted_type_id ",
                    "order by s.station_name")
   pg_con = pg_con_local(dbname = "harmonics")
   station_offsets = DBI::dbGetQuery(pg_con, qry)

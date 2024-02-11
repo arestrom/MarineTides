@@ -15,6 +15,8 @@
 #  3. Dump start and end dates from harmonic_tides()? No, data is needed.                --Done
 #  4. Add warning for harmonic stations that have been removed!
 #  5. Fix database to eliminate duplicate station names.                                 --Done
+#  6. Add distance to reference station to harms. Output as warning. In cases such
+#     as Christmas Island to Honolulu it should be a note to the user.
 #
 #  NEXT:
 #  1. Create function to plot high-low data, using spline, or combo?
@@ -283,7 +285,6 @@ harmonic_tides = function(station_code, station_info,
 }
 
 # Function to generate high_low tide values.
-# Ok to dump first values...will use date buffers for subordinate stations
 high_low_tides = function(tide_pred, data_interval, tide_station) {
   tide_pred = data.table(tide_pred)
   high_peaks = find_peaks(tide_pred$tide_level, m = 5)
@@ -309,24 +310,32 @@ high_low_tides = function(tide_pred, data_interval, tide_station) {
 subordinate_tides = function(hl_tides, harms) {
   offsets_dt = data.table(harms$st_offsets)
   offsets_dt = offsets_dt[station_code == hl_tides$station_code[1]]
+  height_offset_type = offsets_dt[, height_offset_type]
   tide_hl = cbind(offsets_dt, hl_tides[, .(tide_type, tide_time, tide_level)])
-  tide_hl[tide_type == "H", ':=' (offset_time = tide_time + (time_offset_high_tide_minutes * 60),
-                                  offset_level = tide_level * height_offset_factor_high_tide)]
-  tide_hl[tide_type == "L", ':=' (offset_time = tide_time + (time_offset_low_tide_minutes * 60),
-                                  offset_level = tide_level * height_offset_factor_low_tide)]
+  if ( height_offset_type == "R" ) {
+    tide_hl[tide_type == "H", ':=' (offset_time = tide_time + (time_offset_high_tide_minutes * 60),
+                                    offset_level = tide_level * height_offset_high_tide)]
+    tide_hl[tide_type == "L", ':=' (offset_time = tide_time + (time_offset_low_tide_minutes * 60),
+                                    offset_level = tide_level * height_offset_low_tide)]
+  } else {
+    tide_hl[tide_type == "H", ':=' (offset_time = tide_time + (time_offset_high_tide_minutes * 60),
+                                    offset_level = tide_level + height_offset_high_tide)]
+    tide_hl[tide_type == "L", ':=' (offset_time = tide_time + (time_offset_low_tide_minutes * 60),
+                                    offset_level = tide_level + height_offset_low_tide)]
+  }
   tide_hl = tide_hl[, .(station_code, station_name, reference_station_code, tide_type,
                         tide_time = offset_time, tide_level = offset_level)]
   return(tide_hl)
 }
 
-# Test
-tide_station = "Asau Harbor, Savaii Island"
-start_date = "2024-02-06"
-end_date = "2024-02-06"
-data_interval = "high-low"
-timezone = NULL
-verbose = TRUE
-harms = MarineTides::harmonics
+# # Test
+# tide_station = "Asau Harbor, Savaii Island"
+# start_date = "2024-02-06"
+# end_date = "2024-02-06"
+# data_interval = "high-low"
+# timezone = NULL
+# verbose = TRUE
+# harms = MarineTides::harmonics
 
 
 # Initial wrapper function
@@ -400,6 +409,18 @@ tide_level = function(tide_station,
 # Load harmonics data
 load("data/harmonics.rda")
 harms = harmonics
+
+# Test high-low Christmas Island
+tm = Sys.time()
+harm_xmas = tide_level(
+  tide_station = "Christmas Island",
+  start_date = "2024-02-06",
+  end_date = "2024-02-06",
+  data_interval = "high-low",
+  timezone = "UTC",
+  verbose = TRUE
+)
+nd = Sys.time(); nd - tm  # 0.12431 secs
 
 #====================================================================
 # Test various combinations of inputs for harmonic station

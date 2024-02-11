@@ -620,24 +620,67 @@ subs_mtide = mtide_tides_loop(subs_foreign,
                               data_interval = "high-low")
 nd = Sys.time(); nd - tm  # 0.7298121 sec
 
-# Identify any missing stations: Result: 8 missing
+# Identify any missing stations: Result: No more missing now that APIA has harmonics
 length(unique(subs_mtide$station_code))
-missing_subs = subs_foreign$station_code[!subs_foreign$station_code %in% subs_mtide$station_code]
-missing_foreign_sts = subset(foreign_sts, station_code %in% missing_subs)
+# missing_subs = subs_foreign$station_code[!subs_foreign$station_code %in% subs_mtide$station_code]
+# missing_foreign_sts = subset(foreign_sts, station_code %in% missing_subs)
 
 # Get the initial data back
-subs_noaa = merge(foreign_sts, subs_noaa,
-                   by = "station_code", all.x = TRUE)
+subs_noaa_dt = merge(foreign_sts, subs_noaa_dt,
+                     by = "station_code", all.x = TRUE)
+
+# Add id variables to allow comparison
+subs_mtide_dt = as.data.table(subs_mtide)
+subs_mtide_dt$id = rowidv(subs_mtide_dt, cols = c("station_code", "tide_type"))
+subs_mtide_dt = subs_mtide_dt[, hl_tides := paste0(tide_type, "-", id)]
+subs_mtide_dt = subs_mtide_dt[, .(station_code, hl_tides, mtide_tide_time = tide_time, mtide_tide_level = mtide_level)]
+
+# Join mtide and noaa as comb_tide
+subs_noaa_dt$noaa_tide_time = as.POSIXct(subs_noaa_dt$noaa_tide_time, tz = "UTC")
+comb_tide_fs = merge(subs_noaa_dt, subs_mtide_dt, by = c("station_code", "hl_tides"), all.x = TRUE)
+comb_tide_fs = comb_tide_fs[, c("station_name", "station_code", "ref_station_code", "time_meridian",
+                                "tide_type", "established", "removed", "epoch_start", "epoch_end",
+                                "n_consts", "hl_tides", "noaa_tide_time", "mtide_tide_time",
+                                "noaa_tide_level", "mtide_tide_level")]
+
+# Add ref station name, just for curiosity to see how far away
+all_stations_dt = as.data.table(all_stations)
+ref_names = all_stations_dt[, .(ref_station_code = station_code, ref_station_name = station_name)]
+comb_tide_fs = merge(comb_tide_fs, ref_names, by = "ref_station_code", all.x = TRUE)
+
+# Round tide hts
+# is.data.table(comb_tide_fs)
+comb_tide_fs$mtide_tide_level = round(comb_tide_fs$mtide_tide_level, digits = 3)
+
+# Compute diffs
+comb_tide_fs = as.data.table(comb_tide_fs)
+comb_tide_fs = comb_tide_fs[, ':=' (time_diff = abs(noaa_tide_time - mtide_tide_time),
+                                    level_diff = abs(noaa_tide_level - mtide_tide_level))]
 
 
 
-# Join rtide and noaa as comb_tide
-subs_noaa$tide_time = as.POSIXct(subs_noaa$tide_time, tz = "UTC")
-subs_mtide = subs_mtide[, .(station_code, tide_time, mtide_level)]
-comb_tide_fs = merge(subs_noaa, subs_mtide, by = c("station_code", "tide_time"), all.x = TRUE)
-comb_tide_fs = comb_tide_fs[, c("station_name", "station_code", "time_meridian", "established", "removed",
-                                "epoch_start", "epoch_end", "n_consts", "tide_time", "tide_level",
-                                "mtide_level")]
+# Pull out station_codes, then add lat lon, and compute distances to see where things break down.
+# Can add this as a report in the program.
+
+
+
+
+
+
+
+
+
+# # Test Christmas Island....Output in comb_tide_fs is as it should be.
+# xmas = MarineTides::tide_level("Christmas Island",
+#                                start_date = "2024-02-06",
+#                                end_date = "2024-02-06",
+#                                data_interval = "high-low",
+#                                timezone = "UTC",
+#                                verbose = TRUE)
+
+
+
+
 
 #==================================================================================
 # Identify differences on subs from foreign stations
