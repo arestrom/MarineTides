@@ -657,32 +657,12 @@ comb_tide_fs = merge(comb_tide_fs, ref_names, by = "ref_station_code", all.x = T
 # is.data.table(comb_tide_fs)
 comb_tide_fs$mtide_tide_level = round(comb_tide_fs$mtide_tide_level, digits = 3)
 
-# Compute diffs
+# Compute diffs: Result: Excellent. All now within 60 secs, and 0.001 meter.
 comb_tide_fs = as.data.table(comb_tide_fs)
 comb_tide_fs = comb_tide_fs[, ':=' (time_diff = abs(noaa_tide_time - mtide_tide_time),
                                     level_diff = abs(noaa_tide_level - mtide_tide_level))]
 comb_tide_fs = comb_tide_fs[order(station_name, noaa_tide_time)]
 
-
-
-# Pull out station_codes, then add lat lon, and compute distances to see where things break down.
-# Can add this as a report in the program.
-
-
-
-
-
-
-
-
-
-# Test Christmas Island....Output in comb_tide_fs is as it should be.
-xmas = MarineTides::tide_level("Fanning Island",
-                               start_date = "2024-02-06",
-                               end_date = "2024-02-06",
-                               data_interval = "high-low",
-                               timezone = "UTC",
-                               verbose = TRUE)
 
 
 
