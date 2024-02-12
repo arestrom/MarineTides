@@ -245,8 +245,8 @@ nd = Sys.time(); nd - tm  # 10.84063 mins
 # Get all rtide predictions
 tm = Sys.time()
 harms_rtide_one = rtide_tides_loop(harms_one,
-                               start_date = "2024-02-06",
-                               end_date = "2024-02-06")
+                                   start_date = "2024-02-06",
+                                   end_date = "2024-02-06")
 nd = Sys.time(); nd - tm  # 6.264818 secs
 
 # =========================================================
@@ -254,18 +254,25 @@ nd = Sys.time(); nd - tm  # 6.264818 secs
 # Get all mtide predictions
 tm = Sys.time()
 harms_mtide_one = mtide_tides_loop(harms_one,
-                               start_date = "2024-02-06",
-                               end_date = "2024-02-06")
+                                   start_date = "2024-02-06",
+                                   end_date = "2024-02-06")
 nd = Sys.time(); nd - tm  # 6.264818 secs
 
 # =========================================================
 
-# Get the initial data back
+# Add the full set of info back in
 harms_noaa_one_st = merge(harms_noaa_one, harms_one,
                           by = "station_code", all.x = TRUE)
 
 # Pull out any data from NOAA that failed to get point estimates
+harms_noaa_one_st = as.data.table(harms_noaa_one_st)
 harms_noaa_one_fail = harms_noaa_one_st[is.na(tide_level)]
+
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "noaa_harms_fail_temp")
+# DBI::dbWriteTable(pg_con, tbl, harms_noaa_one_fail, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
 
 # Results:
 # 1778000, APIA: Now fixed in mtide...Is a sub in NOAA so won't process for point estimates
@@ -274,20 +281,373 @@ harms_noaa_one_fail = harms_noaa_one_st[is.na(tide_level)]
 # 8517756, Kingsborough, Sheepshead Bay: Errors on website.
 #          Says: Tide predictions are not available for this station. Remove
 
-
-
+# Pull out data that did not fail
+harms_noaa_one_st = harms_noaa_one_st[!is.na(tide_level)]
 
 # Join rtide and noaa as comb_tide
-#harms_noaa_one_st = as.data.table(harms_noaa_one_st)
 harms_noaa_one_st$tide_time = as.POSIXct(harms_noaa_one_st$tide_time, tz = "UTC")
-comb_tide = merge(harms_noaa, harms_rtide, by = c("station_code", "tide_time"), all.x = TRUE)
+is.data.table(harms_noaa_one_st)
+comb_tide_one = merge(harms_noaa_one_st, harms_rtide_one, by = c("station_code", "tide_time"), all.x = TRUE)
 
 # Join mtide to comb_tide
-harms_mtide = harms_mtide[, .(station_code, tide_time, mtide_level)]
-comb_tide = merge(comb_tide, harms_mtide, by = c("station_code", "tide_time"), all.x = TRUE)
-comb_tide = comb_tide[, c("station_name", "station_code", "time_meridian", "established", "removed",
-                          "epoch_start", "epoch_end", "n_consts", "tide_time", "tide_level",
-                          "rtide_level", "mtide_level")]
+is.data.table(harms_mtide_one)
+harms_mtide_one = harms_mtide_one[, .(station_code, tide_time, mtide_level)]
+comb_tide_one = merge(comb_tide_one, harms_mtide_one, by = c("station_code", "tide_time"), all.x = TRUE)
+
+# Add in remaining data
+comb_tide_one = merge(comb_tide_one, all_harms, by = "station_code", all.x = TRUE)
+comb_tide_one = comb_tide_one[, .(station_name = station_name.x, station_code, time_meridian,
+                                  established, removed, epoch_start, epoch_end, n_consts,
+                                  tide_time, tide_level, rtide_level, mtide_level)]
+
+# Identify differences ==========================
+
+# Round tide hts   MTIDES LOOKS EXCELLENT !!!!
+is.data.table(harms_mtide_one)
+comb_tide_one$rtide_level = round(comb_tide_one$rtide_level, digits = 3)
+comb_tide_one$mtide_level = round(comb_tide_one$mtide_level, digits = 3)
+comb_tide_one$difr = abs(comb_tide_one$tide_level - comb_tide_one$rtide_level)
+comb_tide_one$difm = abs(comb_tide_one$tide_level - comb_tide_one$mtide_level)
+
+# Max difference for rtide: Result: 5.049m, huge = 16.56496ft
+(max_diff_rtide_one = max(comb_tide_one$difr, na.rm = TRUE) / 0.3048)
+
+# Max difference for mtide: Result: 0.001m, just rounding error.
+(max_diff_mtide_one = max(comb_tide_one$difm, na.rm = TRUE) / 0.3048)
+
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "harms_comparison")
+# DBI::dbWriteTable(pg_con, tbl, comb_tide_one, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
+
+#==================================================================================
+# Run the loop functions on second set of harm stations
+#==================================================================================
+
+# Pull out subset with names and codes
+is.data.table(all_harms)
+harms_two = all_harms[251:500, .(station_code, station_name)]
+
+# =========================================================
+
+# Get noaa predictions
+tm = Sys.time()
+harms_noaa_two = noaa_tides_loop(harms_two,
+                                 start_date = "2024-02-06",
+                                 end_date = "2024-02-06",
+                                 time_interval = "60")
+nd = Sys.time(); nd - tm  # 10.84063 mins
+
+# =========================================================
+
+# Get all rtide predictions
+tm = Sys.time()
+harms_rtide_two = rtide_tides_loop(harms_two,
+                                   start_date = "2024-02-06",
+                                   end_date = "2024-02-06")
+nd = Sys.time(); nd - tm  # 6.264818 secs
+
+# =========================================================
+
+# Get all mtide predictions
+tm = Sys.time()
+harms_mtide_two = mtide_tides_loop(harms_two,
+                                   start_date = "2024-02-06",
+                                   end_date = "2024-02-06")
+nd = Sys.time(); nd - tm  # 6.264818 secs
+
+# =========================================================
+
+# Add the full set of info back in
+harms_noaa_two_st = merge(harms_noaa_two, harms_two,
+                          by = "station_code", all.x = TRUE)
+
+# Pull out any data from NOAA that failed to get point estimates
+harms_noaa_two_st = as.data.table(harms_noaa_two_st)
+harms_noaa_two_fail = harms_noaa_two_st[is.na(tide_level)]
+
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "noaa_harms_fail_temp")
+# DBI::dbWriteTable(pg_con, tbl, harms_noaa_one_fail, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
+
+# Results:
+# 1778000, APIA: Now fixed in mtide...Is a sub in NOAA so won't process for point estimates
+# 8517251, Worlds Fair Marina, Flushing Bay: Errors on website.
+#          Says: Tide predictions are not available for this station. Remove
+# 8517756, Kingsborough, Sheepshead Bay: Errors on website.
+#          Says: Tide predictions are not available for this station. Remove
+
+# Pull out data that did not fail
+harms_noaa_two_st = harms_noaa_two_st[!is.na(tide_level)]
+
+# Join rtide and noaa as comb_tide
+harms_noaa_two_st$tide_time = as.POSIXct(harms_noaa_two_st$tide_time, tz = "UTC")
+is.data.table(harms_noaa_two_st)
+comb_tide_two = merge(harms_noaa_two_st, harms_rtide_two, by = c("station_code", "tide_time"), all.x = TRUE)
+
+# Join mtide to comb_tide
+is.data.table(harms_mtide_two)
+harms_mtide_two = harms_mtide_two[, .(station_code, tide_time, mtide_level)]
+comb_tide_two = merge(comb_tide_two, harms_mtide_two, by = c("station_code", "tide_time"), all.x = TRUE)
+
+# Add in remaining data
+comb_tide_two = merge(comb_tide_two, all_harms, by = "station_code", all.x = TRUE)
+comb_tide_two = comb_tide_two[, .(station_name = station_name.x, station_code, time_meridian,
+                                  established, removed, epoch_start, epoch_end, n_consts,
+                                  tide_time, tide_level, rtide_level, mtide_level)]
+
+# Identify differences ==========================
+
+# Round tide hts   MTIDES LOOKS EXCELLENT !!!!
+is.data.table(harms_mtide_one)
+comb_tide_two$rtide_level = round(comb_tide_two$rtide_level, digits = 3)
+comb_tide_two$mtide_level = round(comb_tide_two$mtide_level, digits = 3)
+comb_tide_two$difr = abs(comb_tide_two$tide_level - comb_tide_two$rtide_level)
+comb_tide_two$difm = abs(comb_tide_two$tide_level - comb_tide_two$mtide_level)
+
+# Max difference for rtide: Result: 5.049m, huge = 10.32152ft
+(max_diff_rtide_two = max(comb_tide_two$difr, na.rm = TRUE) / 0.3048)
+
+# Max difference for mtide: Result: 0.00328084 ft, just rounding error.
+(max_diff_mtide_two = max(comb_tide_two$difm, na.rm = TRUE) / 0.3048)
+
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "harms_comparison")
+# DBI::dbWriteTable(pg_con, tbl, comb_tide_two, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
+
+#==================================================================================
+# Run the loop functions on third set of harm stations
+#==================================================================================
+
+# Pull out subset with names and codes
+is.data.table(all_harms)
+harms_three = all_harms[501:750, .(station_code, station_name)]
+
+# =========================================================
+
+# Get noaa predictions
+tm = Sys.time()
+harms_noaa_three = noaa_tides_loop(harms_three,
+                                   start_date = "2024-02-06",
+                                   end_date = "2024-02-06",
+                                   time_interval = "60")
+nd = Sys.time(); nd - tm  # 11.28623 mins
+
+# =========================================================
+
+# Get all rtide predictions
+tm = Sys.time()
+harms_rtide_three= rtide_tides_loop(harms_three,
+                                    start_date = "2024-02-06",
+                                    end_date = "2024-02-06")
+nd = Sys.time(); nd - tm  # 4.314973 secs
+
+# =========================================================
+
+# Get all mtide predictions
+tm = Sys.time()
+harms_mtide_three = mtide_tides_loop(harms_three,
+                                     start_date = "2024-02-06",
+                                     end_date = "2024-02-06")
+nd = Sys.time(); nd - tm  # 10.08324 secs
+
+# =========================================================
+
+# Add the full set of info back in
+harms_noaa_three_st = merge(harms_noaa_three, harms_three,
+                            by = "station_code", all.x = TRUE)
+
+# Pull out any data from NOAA that failed to get point estimates
+harms_noaa_three_st = as.data.table(harms_noaa_three_st)
+harms_noaa_three_fail = harms_noaa_three_st[is.na(tide_level)]
+
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "noaa_harms_fail_temp")
+# DBI::dbWriteTable(pg_con, tbl, harms_noaa_one_fail, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
+
+# Results:
+# 1778000, APIA: Now fixed in mtide...Is a sub in NOAA so won't process for point estimates
+# 8517251, Worlds Fair Marina, Flushing Bay: Errors on website.
+#          Says: Tide predictions are not available for this station. Remove
+# 8517756, Kingsborough, Sheepshead Bay: Errors on website.
+#          Says: Tide predictions are not available for this station. Remove
+
+# Pull out data that did not fail
+harms_noaa_three_st = harms_noaa_three_st[!is.na(tide_level)]
+
+# Join rtide and noaa as comb_tide
+harms_noaa_three_st$tide_time = as.POSIXct(harms_noaa_three_st$tide_time, tz = "UTC")
+is.data.table(harms_noaa_three_st)
+comb_tide_three = merge(harms_noaa_three_st, harms_rtide_three, by = c("station_code", "tide_time"), all.x = TRUE)
+
+# Join mtide to comb_tide
+is.data.table(harms_mtide_three)
+harms_mtide_three = harms_mtide_three[, .(station_code, tide_time, mtide_level)]
+comb_tide_three = merge(comb_tide_three, harms_mtide_three, by = c("station_code", "tide_time"), all.x = TRUE)
+
+# Add in remaining data
+comb_tide_three = merge(comb_tide_three, all_harms, by = "station_code", all.x = TRUE)
+comb_tide_three = comb_tide_three[, .(station_name = station_name.x, station_code, time_meridian,
+                                      established, removed, epoch_start, epoch_end, n_consts,
+                                      tide_time, tide_level, rtide_level, mtide_level)]
+
+# Identify differences ==========================
+
+# Round tide hts   MTIDES LOOKS EXCELLENT !!!!
+comb_tide_three$rtide_level = round(comb_tide_three$rtide_level, digits = 3)
+comb_tide_three$mtide_level = round(comb_tide_three$mtide_level, digits = 3)
+comb_tide_three$difr = abs(comb_tide_three$tide_level - comb_tide_three$rtide_level)
+comb_tide_three$difm = abs(comb_tide_three$tide_level - comb_tide_three$mtide_level)
+
+# Max difference for rtide: Result: huge = 6.138451ft
+(max_diff_rtide_three = max(comb_tide_three$difr, na.rm = TRUE) / 0.3048)
+
+# Max difference for mtide: Result: 0.00328084 ft, just rounding error.
+(max_diff_mtide_three = max(comb_tide_three$difm, na.rm = TRUE) / 0.3048)
+
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "harms_comparison")
+# DBI::dbWriteTable(pg_con, tbl, comb_tide_three, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
+
+#==================================================================================
+# Run the loop functions on fourth set of harm stations
+#==================================================================================
+
+# Pull out subset with names and codes
+harms_four = all_harms[751:1139, .(station_code, station_name)]
+
+# =========================================================
+
+# Get noaa predictions
+tm = Sys.time()
+harms_noaa_four = noaa_tides_loop(harms_four,
+                                  start_date = "2024-02-06",
+                                  end_date = "2024-02-06",
+                                  time_interval = "60")
+nd = Sys.time(); nd - tm  # 18.69807 mins
+
+# =========================================================
+
+# Get all rtide predictions
+tm = Sys.time()
+harms_rtide_four = rtide_tides_loop(harms_four,
+                                    start_date = "2024-02-06",
+                                    end_date = "2024-02-06")
+nd = Sys.time(); nd - tm  # 7.772297 secs
+
+# =========================================================
+
+# Get all mtide predictions
+tm = Sys.time()
+harms_mtide_four = mtide_tides_loop(harms_four,
+                                    start_date = "2024-02-06",
+                                    end_date = "2024-02-06")
+nd = Sys.time(); nd - tm  # 15.98584 secs
+
+# =========================================================
+
+# Add the full set of info back in
+harms_noaa_four_st = merge(harms_noaa_four, harms_four,
+                           by = "station_code", all.x = TRUE)
+
+# Pull out any data from NOAA that failed to get point estimates
+harms_noaa_four_st = as.data.table(harms_noaa_four_st)
+harms_noaa_four_fail = harms_noaa_four_st[is.na(tide_level)]
+
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "noaa_harms_fail_temp")
+# DBI::dbWriteTable(pg_con, tbl, harms_noaa_one_fail, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
+
+# Results:
+# 1778000, APIA: Now fixed in mtide...Is a sub in NOAA so won't process for point estimates
+# 8517251, Worlds Fair Marina, Flushing Bay: Errors on website.
+#          Says: Tide predictions are not available for this station. Remove
+# 8517756, Kingsborough, Sheepshead Bay: Errors on website.
+#          Says: Tide predictions are not available for this station. Remove
+
+# Pull out data that did not fail
+harms_noaa_four_st = harms_noaa_four_st[!is.na(tide_level)]
+
+# Join rtide and noaa as comb_tide
+harms_noaa_four_st$tide_time = as.POSIXct(harms_noaa_four_st$tide_time, tz = "UTC")
+comb_tide_four = merge(harms_noaa_four_st, harms_rtide_four, by = c("station_code", "tide_time"), all.x = TRUE)
+
+# Join mtide to comb_tide
+harms_mtide_four = harms_mtide_four[, .(station_code, tide_time, mtide_level)]
+comb_tide_four = merge(comb_tide_four, harms_mtide_four, by = c("station_code", "tide_time"), all.x = TRUE)
+
+# Add in remaining data
+comb_tide_four = merge(comb_tide_four, all_harms, by = "station_code", all.x = TRUE)
+comb_tide_four = comb_tide_four[, .(station_name = station_name.x, station_code, time_meridian,
+                                    established, removed, epoch_start, epoch_end, n_consts,
+                                    tide_time, tide_level, rtide_level, mtide_level)]
+
+# Identify differences ==========================
+
+# Round tide hts   MTIDES LOOKS EXCELLENT !!!!
+comb_tide_four$rtide_level = round(comb_tide_four$rtide_level, digits = 3)
+comb_tide_four$mtide_level = round(comb_tide_four$mtide_level, digits = 3)
+comb_tide_four$difr = abs(comb_tide_four$tide_level - comb_tide_four$rtide_level)
+comb_tide_four$difm = abs(comb_tide_four$tide_level - comb_tide_four$mtide_level)
+
+# Max difference for rtide: Result: huge = 10.13451ft
+(max_diff_rtide_four = max(comb_tide_four$difr, na.rm = TRUE) / 0.3048)
+
+# Max difference for mtide: Result: 1.437008 ft. NEED TO INVESTIGATE !!!!!!!!!!!!!!!!!!!!!!!!!!
+
+# Anchorage is the problem. May not be using all year constituents. Rtide is better !!!!
+
+
+(max_diff_mtide_four = max(comb_tide_four$difm, na.rm = TRUE) / 0.3048)
+
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "harms_comparison")
+# DBI::dbWriteTable(pg_con, tbl, comb_tide_four, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
+
+
+# NEXT: RUN THROUGH SUBORDINATE STATIONS !!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Print station names
 unique(comb_tide$station_name)
