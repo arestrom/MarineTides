@@ -625,17 +625,17 @@ length(unique(subs_mtide$station_code))
 # missing_subs = subs_foreign$station_code[!subs_foreign$station_code %in% subs_mtide$station_code]
 # missing_foreign_sts = subset(foreign_sts, station_code %in% missing_subs)
 
-# Dump any data not within the start_date, end_date. Sometimes tides are predicted for following day
-is.data.table(subs_mtide)
-subs_mtide_trim = subs_mtide[inrange(tide_time, as.POSIXct("2024-02-06", tz = "UTC"),
-                                     as.POSIXct("2024-02-07", tz = "UTC"))]
+# # Dump any data not within the start_date, end_date. Sometimes tides are predicted for following day
+# is.data.table(subs_mtide)
+# subs_mtide_trim = subs_mtide[inrange(tide_time, as.POSIXct("2024-02-06", tz = "UTC"),
+#                                      as.POSIXct("2024-02-07", tz = "UTC"))]
 
 # Get the initial data back
 subs_noaa_dt = merge(foreign_sts, subs_noaa_dt,
                      by = "station_code", all.x = TRUE)
 
 # Add id variables to allow comparison
-subs_mtide_dt = as.data.table(subs_mtide_trim)
+subs_mtide_dt = as.data.table(subs_mtide)
 subs_mtide_dt$id = rowidv(subs_mtide_dt, cols = c("station_code", "tide_type"))
 subs_mtide_dt = subs_mtide_dt[, hl_tides := paste0(tide_type, "-", id)]
 subs_mtide_dt = subs_mtide_dt[, .(station_code, hl_tides, mtide_tide_time = tide_time, mtide_tide_level = mtide_level)]
@@ -661,6 +661,7 @@ comb_tide_fs$mtide_tide_level = round(comb_tide_fs$mtide_tide_level, digits = 3)
 comb_tide_fs = as.data.table(comb_tide_fs)
 comb_tide_fs = comb_tide_fs[, ':=' (time_diff = abs(noaa_tide_time - mtide_tide_time),
                                     level_diff = abs(noaa_tide_level - mtide_tide_level))]
+comb_tide_fs = comb_tide_fs[order(station_name, noaa_tide_time)]
 
 
 
@@ -676,7 +677,7 @@ comb_tide_fs = comb_tide_fs[, ':=' (time_diff = abs(noaa_tide_time - mtide_tide_
 
 
 # Test Christmas Island....Output in comb_tide_fs is as it should be.
-xmas = MarineTides::tide_level("Christmas Island",
+xmas = MarineTides::tide_level("Fanning Island",
                                start_date = "2024-02-06",
                                end_date = "2024-02-06",
                                data_interval = "high-low",

@@ -128,7 +128,7 @@ tide_level = function(tide_station = "Seattle",
                                  tide_type, tide_time, tide_level)]
     tide_out = tide_pred
   }
-  tide_out = tide_out[inrange(tide_time, min(prediction_dts), max(prediction_dts))]
+  # tide_out = tide_out[inrange(tide_time, min(prediction_dts), max(prediction_dts))]
   return(tide_out)
 }
 
