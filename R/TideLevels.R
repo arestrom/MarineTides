@@ -99,7 +99,15 @@ tide_level = function(tide_station = "Seattle",
   if ( verbose == TRUE ) {
     cat(glue::glue("\nTides will be predicted from {start_date} to {end_date}\n\n"))
   }
-  prediction_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
+  if ( station_info[[2]] == "S" ) {
+    start_buffer = start_date - 1L
+    end_buffer = end_date + 1L
+    prediction_dts = get_prediction_range(start_buffer, end_buffer, pred_inc, timezone)
+    report_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
+  } else {
+    prediction_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
+    report_dts = prediction_dts
+  }
   if ( station_info[[2]] == "S" & data_interval %in% c("1-min", "6-min", "15-min", "30-min", "60-min") ) {
     data_interval = "high-low"
     warning("\nFor subordinate stations, only high and low tide values will be computed.\n")
@@ -128,7 +136,7 @@ tide_level = function(tide_station = "Seattle",
                                  tide_type, tide_time, tide_level)]
     tide_out = tide_pred
   }
-  # tide_out = tide_out[inrange(tide_time, min(prediction_dts), max(prediction_dts))]
+  tide_out = tide_out[inrange(tide_time, min(report_dts), max(report_dts))]
   return(tide_out)
 }
 

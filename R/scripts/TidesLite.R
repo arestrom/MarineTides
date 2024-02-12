@@ -17,6 +17,13 @@
 #  5. Fix database to eliminate duplicate station names.                                 --Done
 #  6. Add distance to reference station to harms. Output as warning. In cases such
 #     as Christmas Island to Honolulu it should be a note to the user.
+#  7. Need a negative and positive buffer to get all dates covered as like NOAA.
+#     If, for example,tide happenes late previous day but offset is plus 158 minutes,
+#     then we will miss the first occurance. Get max and min offsets in minutes to
+#     add an appropriate buffer.
+#     max(abs(station_offsets$time_offset_high_tide_minutes)) = 696
+#     max(abs(station_offsets$time_offset_low_tide_minutes))  = 741
+#     Use buffer of 14 hours = 840 minutes.
 #
 #  NEXT:
 #  1. Create function to plot high-low data, using spline, or combo?
@@ -333,7 +340,7 @@ subordinate_tides = function(hl_tides, harms) {
 # start_date = "2024-02-06"
 # end_date = "2024-02-06"
 # data_interval = "high-low"
-# timezone = NULL
+# timezone = "UTC"
 # verbose = TRUE
 # harms = MarineTides::harmonics
 
@@ -367,12 +374,23 @@ tide_level = function(tide_station,
   if ( is.null(timezone) ) {
     timezone = station_info[[3]]
   }
-  start_date = anytime::anydate(start_date, tz = timezone)
-  end_date = anytime::anydate(end_date, tz = timezone)
+  # Add buffer around date for subordinate dates to cover all cases of offsets
+  if ( station_info[[2]] == "S" ) {
+    start_date = anytime::anydate(start_date, tz = timezone)
+    end_date = anytime::anydate(end_date, tz = timezone)
+    start_buffer = start_date - 1L
+    end_buffer = end_date + 1L
+    prediction_dts = get_prediction_range(start_buffer, end_buffer, pred_inc, timezone)
+    report_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
+  } else {
+    start_date = anytime::anytime(start_date, tz = timezone)
+    end_date = anytime::anytime(end_date, tz = timezone)
+    prediction_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
+    report_dts = prediction_dts
+  }
   if ( verbose == TRUE ) {
     cat(glue::glue("\nTides will be predicted from {start_date} to {end_date}\n\n"))
   }
-  prediction_dts = get_prediction_range(start_date, end_date, pred_inc, timezone)
   # Update data_interval to high-low if minutes are requested and its a subordinate station
   if ( station_info[[2]] == "S" & data_interval %in% c("1-min", "6-min", "15-min", "30-min", "60-min") ) {
     data_interval = "high-low"
@@ -400,7 +418,7 @@ tide_level = function(tide_station,
     tide_out = tide_pred
   }
   # Trim to values in prediction_dts. To get same output as NOAA. This includes bounds.
-  tide_out = tide_out[inrange(tide_time, min(prediction_dts), max(prediction_dts))]
+  tide_out = tide_out[inrange(tide_time, min(report_dts), max(report_dts))]
   return(tide_out)
 }
 
@@ -415,7 +433,7 @@ harms = harmonics
 # Test high-low Christmas Island
 tm = Sys.time()
 harm_xmas = tide_level(
-  tide_station = "Christmas Island",
+  tide_station = "Fanning Island",
   start_date = "2024-02-06",
   end_date = "2024-02-06",
   data_interval = "high-low",
