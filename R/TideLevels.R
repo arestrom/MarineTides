@@ -260,7 +260,7 @@ subordinate_tides = function(hl_tides, harms) {
     tide_hl[tide_type == "L", ':=' (offset_time = tide_time + (time_offset_low_tide_minutes * 60),
                                     offset_level = tide_level + height_offset_low_tide)]
   }
-  tide_hl = tide_hl[, .(station_code, station_name, reference_station_code, tide_type,
-                        tide_time = offset_time, tide_level = offset_level)]
+  tide_hl = tide_hl[, list(station_code, station_name, reference_station_code, tide_type,
+                           tide_time = offset_time, tide_level = offset_level)]
   return(tide_hl)
 }

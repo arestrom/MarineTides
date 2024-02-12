@@ -245,7 +245,7 @@ harmonic_tides = function(station_code, station_info,
   meridian = 0L
   # Get station_constituents data: amplitude, speed, phase
   consts = stconsts_dt[station_code == station_info[[1]], .(order, code, amplitude, phase)]
-  consts = speeds_dt[consts, .(order, code, amplitude, phase, speed), on = "order"]
+  consts = speeds_dt[consts, list(order, code, amplitude, phase, speed), on = "order"]
   amplitude = consts[, amplitude]
   speed = consts[, speed]
   phase = consts[, phase]
@@ -311,7 +311,7 @@ subordinate_tides = function(hl_tides, harms) {
   offsets_dt = data.table(harms$st_offsets)
   offsets_dt = offsets_dt[station_code == hl_tides$station_code[1]]
   height_offset_type = offsets_dt[, height_offset_type]
-  tide_hl = cbind(offsets_dt, hl_tides[, .(tide_type, tide_time, tide_level)])
+  tide_hl = cbind(offsets_dt, hl_tides[, list(tide_type, tide_time, tide_level)])
   if ( height_offset_type == "R" ) {
     tide_hl[tide_type == "H", ':=' (offset_time = tide_time + (time_offset_high_tide_minutes * 60),
                                     offset_level = tide_level * height_offset_high_tide)]
@@ -323,8 +323,8 @@ subordinate_tides = function(hl_tides, harms) {
     tide_hl[tide_type == "L", ':=' (offset_time = tide_time + (time_offset_low_tide_minutes * 60),
                                     offset_level = tide_level + height_offset_low_tide)]
   }
-  tide_hl = tide_hl[, .(station_code, station_name, reference_station_code, tide_type,
-                        tide_time = offset_time, tide_level = offset_level)]
+  tide_hl = tide_hl[, list(station_code, station_name, reference_station_code, tide_type,
+                           tide_time = offset_time, tide_level = offset_level)]
   return(tide_hl)
 }
 
@@ -394,9 +394,9 @@ tide_level = function(tide_station,
     tide_out = hl_tides
   } else if (station_info[[2]] == "H" & data_interval %in% c("1-min", "6-min", "15-min", "30-min", "60-min") ) {
     tide_pred = data.table(tide_pred)
-    tide_pred = tide_pred[, .(station_code, station_name,
-                              reference_station_code,
-                              tide_type, tide_time, tide_level)]
+    tide_pred = tide_pred[, list(station_code, station_name,
+                                 reference_station_code,
+                                 tide_type, tide_time, tide_level)]
     tide_out = tide_pred
   }
   # Trim to values in prediction_dts. To get same output as NOAA. This includes bounds.
