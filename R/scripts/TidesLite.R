@@ -399,6 +399,8 @@ tide_level = function(tide_station,
                               tide_type, tide_time, tide_level)]
     tide_out = tide_pred
   }
+  # Trim to values in prediction_dts. To get same output as NOAA. This includes bounds.
+  tide_out = tide_out[inrange(tide_time, min(prediction_dts), max(prediction_dts))]
   return(tide_out)
 }
 
