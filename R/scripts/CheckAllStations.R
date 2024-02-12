@@ -1,5 +1,5 @@
 #====================================================================================
-# Check data in Harmonics DB
+# Check all station data in Harmonics DB
 #
 #  Notes:
 #  1. I checked Station info for Tacoma. No notes about station being removed
@@ -64,63 +64,8 @@ pg_con_local = function(dbname, port = '5433') {
   con
 }
 
-#=============================================================================
-# Load harmonics data: 4.5 MB uncompressed.
-#=============================================================================
-
-# # Load harmonics data
-# load("data/harmonics.rda")
-
-# #====================================================================
-# # Check on specific stations around here. Why do I not get Tacoma?
-# #====================================================================
-#
-# # Get all basic info
-# qry = glue("select s.station_code, s.station_name, st.station_type_code, s.time_meridian, ",
-#            "s.tide_type, s.datum_msl_meter, so.height_offset_factor_low_tide as low_factor ",
-#            "from station as s ",
-#            "left join station_type_lut as st on s.station_type_id = st.station_type_id ",
-#            "left join station_offsets as so on s.station_id = so.station_id ",
-#            "where s.station_code in ('9446484', '9445246','9447130','9446486')")
-# pg_con = pg_con_local(dbname = "harmonics")
-# local_st = dbGetQuery(pg_con, qry)
-# dbDisconnect(pg_con)
-#
-# # Get harmonics info
-# qry = glue("select s.station_code, count (sc.constituent_id) as n_consts ",
-#            "from station_constituent as sc ",
-#            "left join station as s on sc.station_id = s.station_id ",
-#            "where s.station_code in ('9446484', '9445246','9447130','9446486') ",
-#            "group by s.station_code")
-# pg_con = pg_con_local(dbname = "harmonics")
-# const_count = dbGetQuery(pg_con, qry)
-# dbDisconnect(pg_con)
-#
-# # Combine
-# local_st = merge(local_st, const_count, by = "station_code", all.x = TRUE)
-# local_st = as.data.table(local_st)
-# tacoma_st = local_st[station_name %ilike% "Tacoma"]
-#
-# #====================================================================
-# # Some tests on the identify_station() function
-# #====================================================================
-#
-# # See if I can pull tacoma from harms
-# mt_st = MarineTides::identify_station("Tacoma;", harms = harmonics)
-#
-# # See if I can pull tacoma from harms
-# MarineTides::identify_station("Sea", harms = harmonics)
-#
-# # Example of problem
-# station_list = data.table(stations = c("Old Tacoma", "Tacoma", "Tacoma Narrows Bridge", "Tacoma, Commencement Bay"))
-#
-# # First try exact match, then do like
-# match_try = station_list[stations == "Tacoma"]
-# part_try = station_list[stations == "S Tacoma"]
-# station_list[stations %ilike% "Tacoma"]
-
 #====================================================================
-# Checks on all stations in DB
+# Get data for all stations in DB
 #====================================================================
 
 # Get all basic info
@@ -128,8 +73,8 @@ qry = glue("select s.station_code, ss.station_code as ref_station_code, s.statio
            "ST_Y (s.geog::geometry) as lat, ST_X (s.geog::geometry) as lng, ",
            "rg.region_code, rg.country_name, st.station_type_code, s.time_meridian, s.tide_type, ",
            "s.datum_msl_meter, s.dst_observed, s.established, s.removed, s.epoch_start, s.epoch_end, ",
-           "so.height_offset_factor_high_tide as high_factor, so.time_offset_low_tide_minutes as high_time, ",
-           "so.height_offset_factor_low_tide as low_factor, so.time_offset_low_tide_minutes as low_time ",
+           "so.height_offset_high_tide as high_offset, so.time_offset_low_tide_minutes as high_time, ",
+           "so.height_offset_low_tide as low_offset, so.time_offset_low_tide_minutes as low_time ",
            "from station as s ",
            "left join station_type_lut as st on s.station_type_id = st.station_type_id ",
            "left join region_lut as rg on s.region_id = rg.region_id ",
@@ -155,55 +100,24 @@ all_stations = merge(all_stations, const_counts, by = "station_code", all.x = TR
 all_stations_dt = as.data.table(all_stations)
 
 # Pull out harmonic stations where time_meridian is zero
-proper_harmonics = all_stations_dt[time_meridian == 0L & station_type_code == "H"]
-improper_harmonics = all_stations_dt[!time_meridian == 0L & station_type_code == "H"]
+all_harms = all_stations_dt[station_type_code == "H"]
 
 # Pull out the proper subordinate stations
-proper_subordinates = all_stations_dt[!is.na(low_factor) & station_type_code == "S"]
-improper_subordinates = all_stations_dt[is.na(low_factor) & station_type_code == "S"]
+all_subs = all_stations_dt[station_type_code == "S"]
 
 #=========================================================================
 # Questions:
 #=========================================================================
 
-# Check subordinate stations
-all_subs = all_stations_dt[station_type_code == "S"]
-
 # Do subordinate stations all have ref_station_codes? --Result: All have refs
 nrow(all_subs[is.na(ref_station_code)])
 
 # Do subordinate stations all have ref_station_codes and corrections? --Result: All have full set of offsets
-nrow(all_subs[is.na(high_factor) | is.na(high_time) | is.na(low_factor) | is.na(low_time)])
-
-# Check harmonic stations
-all_harms = all_stations_dt[station_type_code == "H"]
-
-# Do harms all have at least 37 constituents?
-# --Result: All stations with less than 37 have been removed, except Atka and Lake Worth Pier
-# -- Only Atka looks like it would be worthwhile keeping?
-harms_missing_consts = all_harms[is.na(n_consts) | n_consts < 37L]
-nrow(all_harms[is.na(n_consts) | n_consts < 37L])
+nrow(all_subs[is.na(high_offset) | is.na(high_time) | is.na(low_offset) | is.na(low_time)])
 
 # How many harms have not been removed?
 harms_now = all_harms[is.na(removed)]; nrow(harms_now) # N = 266
 any(is.na(harms_now$time_meridian)) # All have time_meridian values
-
-# Of all current harms, how many have time_meridian zero
-harms_now_timezero = harms_now[time_meridian == 0L]; nrow(harms_now_timezero)
-
-# Of all current harms, how many have time_meridian not zero
-harms_now_time_off = harms_now[!time_meridian == 0L]; nrow(harms_now_time_off)
-
-#===============================================================================
-# Compare rtide output for Tacoma, and other improper harmonic stations, to NOAA
-# Use harms_now_time_off dataset
-#===============================================================================
-
-# # Seattle
-# station_code = "9447130"
-# start_date = "2024-02-06"
-# end_date = "2024-02-06"
-# time_interval = "60"
 
 #==================================================================================
 # Loop functions
@@ -285,7 +199,7 @@ rtide_tides_loop = function(station_list, start_date, end_date, time_interval = 
   return(all_tides)
 }
 
-# rtide functions ==============================
+# mtide functions ==============================
 
 # Useful to test ability to get names
 mtide_tides_loop = function(station_list, start_date, end_date, data_interval = "60-min") {
@@ -309,34 +223,63 @@ mtide_tides_loop = function(station_list, start_date, end_date, data_interval = 
 }
 
 #==================================================================================
-# Run the loop functions on harm stations where time_meridian is not zero.
+# Run the loop functions on first set of harm stations
 #==================================================================================
 
 # Pull out subset with names and codes
-harms_time_off = harms_now_time_off[,c("station_code", "station_name")]
+is.data.table(all_harms)
+harms_one = all_harms[1:250, .(station_code, station_name)]
+
+# =========================================================
 
 # Get noaa predictions
-harms_noaa = noaa_tides_loop(harms_time_off,
-                             start_date = "2024-02-06",
-                             end_date = "2024-02-06",
-                             time_interval = "60")
+tm = Sys.time()
+harms_noaa_one = noaa_tides_loop(harms_one,
+                                 start_date = "2024-02-06",
+                                 end_date = "2024-02-06",
+                                 time_interval = "60")
+nd = Sys.time(); nd - tm  # 10.84063 mins
+
+# =========================================================
 
 # Get all rtide predictions
-harms_rtide = rtide_tides_loop(harms_time_off,
+tm = Sys.time()
+harms_rtide_one = rtide_tides_loop(harms_one,
                                start_date = "2024-02-06",
                                end_date = "2024-02-06")
+nd = Sys.time(); nd - tm  # 6.264818 secs
+
+# =========================================================
 
 # Get all mtide predictions
-harms_mtide = mtide_tides_loop(harms_time_off,
+tm = Sys.time()
+harms_mtide_one = mtide_tides_loop(harms_one,
                                start_date = "2024-02-06",
                                end_date = "2024-02-06")
+nd = Sys.time(); nd - tm  # 6.264818 secs
+
+# =========================================================
 
 # Get the initial data back
-harms_noaa = merge(harms_now_time_off, harms_noaa,
-                   by = "station_code", all.x = TRUE)
+harms_noaa_one_st = merge(harms_noaa_one, harms_one,
+                          by = "station_code", all.x = TRUE)
+
+# Pull out any data from NOAA that failed to get point estimates
+harms_noaa_one_fail = harms_noaa_one_st[is.na(tide_level)]
+
+# Results:
+# 1778000, APIA: Now fixed in mtide...Is a sub in NOAA so won't process for point estimates
+# 8517251, Worlds Fair Marina, Flushing Bay: Errors on website.
+#          Says: Tide predictions are not available for this station. Remove
+# 8517756, Kingsborough, Sheepshead Bay: Errors on website.
+#          Says: Tide predictions are not available for this station. Remove
+
+
+
 
 # Join rtide and noaa as comb_tide
-harms_noaa$tide_time = as.POSIXct(harms_noaa$tide_time, tz = "UTC")
+#harms_noaa_one_st = as.data.table(harms_noaa_one_st)
+harms_noaa_one_st$tide_time = as.POSIXct(harms_noaa_one_st$tide_time, tz = "UTC")
 comb_tide = merge(harms_noaa, harms_rtide, by = c("station_code", "tide_time"), all.x = TRUE)
 
 # Join mtide to comb_tide
