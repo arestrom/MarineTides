@@ -248,7 +248,7 @@ subordinate_tides = function(hl_tides, harms) {
   offsets_dt = data.table(harms$st_offsets)
   offsets_dt = offsets_dt[station_code == hl_tides$station_code[1]]
   height_offset_type = offsets_dt[, height_offset_type]
-  tide_hl = cbind(offsets_dt, hl_tides[, .(tide_type, tide_time, tide_level)])
+  tide_hl = cbind(offsets_dt, hl_tides[, list(tide_type, tide_time, tide_level)])
   if ( height_offset_type == "R" ) {
     tide_hl[tide_type == "H", ':=' (offset_time = tide_time + (time_offset_high_tide_minutes * 60),
                                     offset_level = tide_level * height_offset_high_tide)]
