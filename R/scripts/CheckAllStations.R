@@ -32,6 +32,7 @@ library(data.table)
 library(glue)
 library(DBI)
 library(RPostgres)
+library(TideHarmonics)
 
 #===============================================================================
 # Functions to access database
@@ -607,6 +608,16 @@ comb_tide_four$difm = abs(comb_tide_four$tide_level - comb_tide_four$mtide_level
 # Max difference for mtide: Result: 1.437008 ft. NEED TO INVESTIGATE !!!!!!!!!!!!!!!!!!!!!!!!!!
 (max_diff_mtide_four = max(comb_tide_four$difm, na.rm = TRUE) / 0.3048)
 
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "harms_comparison")
+# DBI::dbWriteTable(pg_con, tbl, comb_tide_four, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
+
+#=======================================================================================
+# Investigate differences further
+#=======================================================================================
+
 # Anchorage is the problem. May not be using all year constituents. Rtide is better !!!!
 
 # Verified Anchorage has 120 constituents in station_constituent table
@@ -627,6 +638,17 @@ node_year_2024 = node_year_2024[, .(constituent_code = V1, node_year = V2,
 node_year_2024$constituent_code[node_year_2024$constituent_code %in% "LDA2"] = "LAM2"
 node_year_2024$constituent_code[node_year_2024$constituent_code %in% "RHO1"] = "RHO"
 
+# Update remaining constituents uncovered below
+node_year_2024$constituent_code[node_year_2024$constituent_code %in% "SIG1"] = "SIGMA1"
+node_year_2024$constituent_code[node_year_2024$constituent_code %in% "M2(KS)2"] = "M2KS2"
+node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2SN(MK)2"] = "2SNMK2"
+node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2KM(SN)2"] = "2KMSN2"
+node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2MNLS6"] = "2MLNS6"
+node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2(MS)8"] = "2MS8"
+node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2(MN)8"] = "2MN8"
+node_year_2024$constituent_code[node_year_2024$constituent_code %in% "THE1"] = "THETA1"
+node_year_2024$constituent_code[node_year_2024$constituent_code %in% "OQ2"] = "OO2"
+
 # Get all constituents from DB
 qry = glue::glue("select constituent_id, constituent_order, constituent_code ",
                  "from constituent")
@@ -635,17 +657,12 @@ pg_con = pg_con_local(dbname = "harmonics")
 constituents = DBI::dbGetQuery(pg_con, qry)
 DBI::dbDisconnect(pg_con)
 
-# Check if all constituent_codes in node_year_2024 are in constituents.
-# They should not all be there, since there are 175 constituents in rtide and only 120 in mtide
-all(node_year_2024$constituent_code %in% constituents$constituent_code)
-
 # Check if all constituent_codes in constituents are in node_year_2024.
 # They should not all be there, since there are 175 constituents in rtide and only 120 in mtide
 all(constituents$constituent_code %in% node_year_2024$constituent_code)
 
 # Find out which are missing
 constituents$constituent_code[!constituents$constituent_code %in% node_year_2024$constituent_code]
-node_year_2024$constituent_code[!node_year_2024$constituent_code %in% constituents$constituent_code]
 
 # Join to see which are missing
 consts = merge(constituents, node_year_2024, by = "constituent_code", all.x = TRUE)
@@ -653,9 +670,9 @@ consts = as.data.table(consts)
 consts = consts[order(constituent_order)]
 
 # Need to verify but:
-#     HarmDB          RTide
-# 1.  SIGMA1          sig1
-# 2.  M2KS2           M2(KS)2
+#     HarmDB          RTide             Confirmed via TideHarmonics?
+# 1.  SIGMA1          sig1              Yes
+# 2.  M2KS2           M2(KS)2           x2K1M.2S2 or 2KM2S2
 # 3.  2SNMK2          2SN(MK)2
 # 4.  2KMSN2          2KM(SN)2
 # 5.  2MLNS6          2MNLS6
@@ -664,14 +681,13 @@ consts = consts[order(constituent_order)]
 # 8.  THETA1          THE1
 # 9.  OO2
 
+# Get names of harmonics from TideHarmonics package
+harm_names = TideHarmonics::harmonics
 
+# Inspect Node to see name for final missing constituent: 2MLNS6, or maybe 4MS6: Result: It was 2MNLS6
+rtide_node = test_harms$Node
+rtide_node = as.data.table(rtide_node)
 
-
-# # Write results to temp table in harmonics DB
-# pg_con = pg_con_local(dbname = "harmonics")
-# tbl = Id(schema = "public", table = "harms_comparison")
-# DBI::dbWriteTable(pg_con, tbl, comb_tide_four, row.names = FALSE, append = TRUE, copy = TRUE)
-# DBI::dbDisconnect(pg_con)
 
 
 # NEXT: RUN THROUGH SUBORDINATE STATIONS !!!!!!!!!!!!!!!!!!!!!!!!!!
