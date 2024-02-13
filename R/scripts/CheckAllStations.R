@@ -605,11 +605,67 @@ comb_tide_four$difm = abs(comb_tide_four$tide_level - comb_tide_four$mtide_level
 (max_diff_rtide_four = max(comb_tide_four$difr, na.rm = TRUE) / 0.3048)
 
 # Max difference for mtide: Result: 1.437008 ft. NEED TO INVESTIGATE !!!!!!!!!!!!!!!!!!!!!!!!!!
+(max_diff_mtide_four = max(comb_tide_four$difm, na.rm = TRUE) / 0.3048)
 
 # Anchorage is the problem. May not be using all year constituents. Rtide is better !!!!
 
+# Verified Anchorage has 120 constituents in station_constituent table
+# But there are only 111 year constituents in year_constituent table
+# Both Anchorage AK (9455920) and Chatham MA (8447435) have 120 constituents
+# Need to re-upload year_constituents
 
-(max_diff_mtide_four = max(comb_tide_four$difm, na.rm = TRUE) / 0.3048)
+# Pull out node_year data to see if I have all the node_year constituents in the DB. I do not
+test_harms = rtide::harmonics
+node_year = test_harms$NodeYear
+node_year_df = as.data.table(node_year)
+node_year_2024 = node_year_df[V2 == "2024"]
+node_year_2024 = dcast(node_year_2024, V1 + V2 ~ V3, value.var = "value")
+node_year_2024 = node_year_2024[, .(constituent_code = V1, node_year = V2,
+                                    year_factor = NodeFactor, equilibrium_arg = EquilArg)]
+
+# Update two constituents to new name then check to see all have match in constituent table
+node_year_2024$constituent_code[node_year_2024$constituent_code %in% "LDA2"] = "LAM2"
+node_year_2024$constituent_code[node_year_2024$constituent_code %in% "RHO1"] = "RHO"
+
+# Get all constituents from DB
+qry = glue::glue("select constituent_id, constituent_order, constituent_code ",
+                 "from constituent")
+
+pg_con = pg_con_local(dbname = "harmonics")
+constituents = DBI::dbGetQuery(pg_con, qry)
+DBI::dbDisconnect(pg_con)
+
+# Check if all constituent_codes in node_year_2024 are in constituents.
+# They should not all be there, since there are 175 constituents in rtide and only 120 in mtide
+all(node_year_2024$constituent_code %in% constituents$constituent_code)
+
+# Check if all constituent_codes in constituents are in node_year_2024.
+# They should not all be there, since there are 175 constituents in rtide and only 120 in mtide
+all(constituents$constituent_code %in% node_year_2024$constituent_code)
+
+# Find out which are missing
+constituents$constituent_code[!constituents$constituent_code %in% node_year_2024$constituent_code]
+node_year_2024$constituent_code[!node_year_2024$constituent_code %in% constituents$constituent_code]
+
+# Join to see which are missing
+consts = merge(constituents, node_year_2024, by = "constituent_code", all.x = TRUE)
+consts = as.data.table(consts)
+consts = consts[order(constituent_order)]
+
+# Need to verify but:
+#     HarmDB          RTide
+# 1.  SIGMA1          sig1
+# 2.  M2KS2           M2(KS)2
+# 3.  2SNMK2          2SN(MK)2
+# 4.  2KMSN2          2KM(SN)2
+# 5.  2MLNS6          2MNLS6
+# 6.  2MS8
+# 7.  2MN8
+# 8.  THETA1          THE1
+# 9.  OO2
+
+
+
 
 # # Write results to temp table in harmonics DB
 # pg_con = pg_con_local(dbname = "harmonics")
