@@ -1107,16 +1107,6 @@ DBI::dbWriteTable(pg_con, tbl, comb_subs_four, row.names = FALSE, append = TRUE,
 DBI::dbDisconnect(pg_con)
 
 
-#=================================================================================
-# SQL Code
-#=================================================================================
-
-# # Some SQL tests
-# SELECT ty.station_type_code, count( ty.station_type_code)
-# FROM station as st
-# LEFT JOIN station_type_lut as ty on ty.station_type_id = st.station_type_id
-# group by ty.station_type_code
-
 
 
 

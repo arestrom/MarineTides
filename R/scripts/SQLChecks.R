@@ -671,7 +671,6 @@ comb_tide_fs = comb_tide_fs[order(station_name, noaa_tide_time)]
 max(comb_tide_fs$level_diff)
 max(comb_tide_fs$time_diff)
 
-
 #=================================================================================
 # SQL Code
 #=================================================================================

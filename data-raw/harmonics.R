@@ -102,6 +102,7 @@ constituent_speed = get_constituent_speed()
 get_station_offsets = function() {
   qry = glue::glue("select s.station_code, s.station_name, ",
                    "ss.station_code as reference_station_code, ",
+                   "st_distance(s.geog::geography, ss.geog::geography)/1000 as ref_km, ",
                    "ha.adjusted_type_code as height_offset_type, ",
                    "so.height_offset_high_tide, ",
                    "so.height_offset_low_tide, ",
@@ -118,6 +119,7 @@ get_station_offsets = function() {
   pg_con = pg_con_local(dbname = "harmonics")
   station_offsets = DBI::dbGetQuery(pg_con, qry)
   DBI::dbDisconnect(pg_con)
+  station_offsets$ref_km = round(station_offsets$ref_km, 2)
   return(station_offsets)
 }
 
