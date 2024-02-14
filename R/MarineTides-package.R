@@ -18,6 +18,7 @@ NULL
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("timezone",
                                                         "removed",
                                                         "reference_station_code",
+                                                        "ref_station_km",
                                                         "station_name",
                                                         "station_datum",
                                                         "station_meridian",

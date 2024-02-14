@@ -96,23 +96,26 @@ get_reference_station = function(station_code, verbose, harms = MarineTides::har
     ref_station_code = list(station_cd, station_type, station_timezone)
     if ( !is.na(station_removed) ) {
       station_removed = format(station_removed, format = '%m/%d/%Y')
-      cat(glue::glue("{station_dt$station_name} tide station is no longer active. It was removed on {station_removed}.", "\n ",
-                     "USE WITH CAUTION!"), "\n\n")
+      warning(cat(glue::glue("{station_name} tide station is no longer active.", "\n",
+                     "It was removed on {station_removed}.", "\n",
+                     "USE WITH CAUTION!"), "\n\n"))
     }
     if ( verbose == TRUE ) {
-      warning(cat(glue::glue("{station_dt$station_name} is a reference station. Tide heights are", "\n ",
-                     "calculated from {station_dt$station_name} harmonic constituents."), "\n\n"))
+      cat(glue::glue("{station_name} is a reference station. Tide heights are", "\n ",
+                     "calculated from {station_name} harmonic constituents."), "\n\n")
     }
   } else {
     ref_station_code = offsets_dt[station_code == station_cd, reference_station_code]
+    ref_station_km = offsets_dt[station_code == station_cd, ref_km]
     ref_station_name = stations_dt[station_code == ref_station_code, station_name]
     ref_station_code = list(ref_station_code, station_type, station_timezone)
     if ( verbose == TRUE ) {
-      cat(glue::glue("{station_name} is a subordinate station. Tide levels are", "\n ",
-                     "calculated from {ref_station_name} harmonic constituents at one minute", "\n ",
-                     "increments. Values for high and low tide are extracted, then time and", "\n ",
-                     "height corrections from {ref_station_name} are applied to the {station_name} ", "\n ",
-                     "predictions."), "\n\n")
+      cat(glue::glue("{station_name} is a subordinate station. The reference station, ", "\n ",
+                     "{ref_station_name}, is located {ref_station_km} km. away. Tide levels are ", "\n ",
+                     "calculated from {ref_station_name} harmonic constituents at one ", "\n ",
+                     "minute increments. Values for high and low tide are extracted, ", "\n ",
+                     "then time and height corrections from {ref_station_name} are applied to  ", "\n ",
+                     "the {station_name} predictions."), "\n\n")
     }
   }
   return(ref_station_code)
