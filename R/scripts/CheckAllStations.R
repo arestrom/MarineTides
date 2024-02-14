@@ -8,6 +8,7 @@
 #  3. Needed to remove 9450623 Big Salt Lake, AK. No harmonics data even though
 #     it is listed as a harmonic station. No predictions on NOAA website. Got
 #     error about invalid datum input.
+#  4. Need to recheck Anchorage (9455920), and North Fork, Nehalem River (9437954)
 #
 #
 #  Questions:
@@ -853,9 +854,6 @@ nd = Sys.time(); nd - tm  #  1.597979 mins
 # Identify any missing stations in NOAA data: None: Got some errors that relooped till successful.
 length(unique(subs_two$station_code))
 length(unique(subs_noaa_two$station_code))
-
-# # Inspect...Malakal Harbor failed. No predictions, remove
-# subs_noaa = subset(subs_noaa, !is.na(tide_level))
 
 # Add id variables to allow comparison
 subs_noaa_two_dt = as.data.table(subs_noaa_two)
