@@ -224,6 +224,20 @@ mtide_tides_loop = function(station_list, start_date, end_date, data_interval = 
 }
 
 #==================================================================================
+# Pull NOAA predictions that were previously run from database
+#==================================================================================
+
+# Pull data from harms_comparison
+qry = glue::glue("select station_name, station_code, time_meridian, established, ",
+                 "removed, epoch_start, epoch_end, n_consts, tide_time, tide_level, ",
+                 "rtide_level ",
+                 "from harms_comparison")
+
+pg_con = pg_con_local(dbname = "harmonics")
+harms_comp = dbGetQuery(pg_con, qry)
+dbDisconnect(pg_con)
+
+#==================================================================================
 # Run the loop functions on first set of harm stations
 #==================================================================================
 
@@ -526,24 +540,37 @@ comb_tide_three$difm = abs(comb_tide_three$tide_level - comb_tide_three$mtide_le
 # Pull out subset with names and codes
 harms_four = all_harms[751:1139, .(station_code, station_name)]
 
-# =========================================================
+# # Will dump stations from harms_comparison that are in harms_four to reload with new data
+# # now that all constituents have been added
+# st_codes = unique(harms_four$station_code)
+# st_cds = paste0(paste0("'", st_codes, "'"), collapse = ", ")
+#
+# # Dump from harms_comparison
+# qry = glue::glue("delete from harms_comparison ",
+#                  "where station_code in ({st_cds})")
+#
+# pg_con = pg_con_local(dbname = "harmonics")
+# DBI::dbExecute(pg_con, qry)
+# DBI::dbDisconnect(pg_con)
 
-# Get noaa predictions
-tm = Sys.time()
-harms_noaa_four = noaa_tides_loop(harms_four,
-                                  start_date = "2024-02-06",
-                                  end_date = "2024-02-06",
-                                  time_interval = "60")
-nd = Sys.time(); nd - tm  # 18.69807 mins
-
-# =========================================================
-
-# Get all rtide predictions
-tm = Sys.time()
-harms_rtide_four = rtide_tides_loop(harms_four,
-                                    start_date = "2024-02-06",
-                                    end_date = "2024-02-06")
-nd = Sys.time(); nd - tm  # 7.772297 secs
+# # =========================================================
+#
+# # Get noaa predictions
+# tm = Sys.time()
+# harms_noaa_four = noaa_tides_loop(harms_four,
+#                                   start_date = "2024-02-06",
+#                                   end_date = "2024-02-06",
+#                                   time_interval = "60")
+# nd = Sys.time(); nd - tm  # 18.69807 mins
+#
+# # =========================================================
+#
+# # Get all rtide predictions
+# tm = Sys.time()
+# harms_rtide_four = rtide_tides_loop(harms_four,
+#                                     start_date = "2024-02-06",
+#                                     end_date = "2024-02-06")
+# nd = Sys.time(); nd - tm  # 7.772297 secs
 
 # =========================================================
 
@@ -556,13 +583,13 @@ nd = Sys.time(); nd - tm  # 15.98584 secs
 
 # =========================================================
 
-# Add the full set of info back in
-harms_noaa_four_st = merge(harms_noaa_four, harms_four,
-                           by = "station_code", all.x = TRUE)
-
-# Pull out any data from NOAA that failed to get point estimates
-harms_noaa_four_st = as.data.table(harms_noaa_four_st)
-harms_noaa_four_fail = harms_noaa_four_st[is.na(tide_level)]
+# # Add the full set of info back in
+# harms_noaa_four_st = merge(harms_noaa_four, harms_four,
+#                            by = "station_code", all.x = TRUE)
+#
+# # Pull out any data from NOAA that failed to get point estimates
+# harms_noaa_four_st = as.data.table(harms_noaa_four_st)
+# harms_noaa_four_fail = harms_noaa_four_st[is.na(tide_level)]
 
 # # Write results to temp table in harmonics DB
 # pg_con = pg_con_local(dbname = "harmonics")
@@ -577,35 +604,37 @@ harms_noaa_four_fail = harms_noaa_four_st[is.na(tide_level)]
 # 8517756, Kingsborough, Sheepshead Bay: Errors on website.
 #          Says: Tide predictions are not available for this station. Remove
 
-# Pull out data that did not fail
-harms_noaa_four_st = harms_noaa_four_st[!is.na(tide_level)]
-
-# Join rtide and noaa as comb_tide
-harms_noaa_four_st$tide_time = as.POSIXct(harms_noaa_four_st$tide_time, tz = "UTC")
-comb_tide_four = merge(harms_noaa_four_st, harms_rtide_four, by = c("station_code", "tide_time"), all.x = TRUE)
+# # Pull out data that did not fail
+# harms_noaa_four_st = harms_noaa_four_st[!is.na(tide_level)]
+#
+# # Join rtide and noaa as comb_tide
+# harms_noaa_four_st$tide_time = as.POSIXct(harms_noaa_four_st$tide_time, tz = "UTC")
+# comb_tide_four = merge(harms_mtide_four, harms_comp, by = c("station_code", "tide_time"), all.x = TRUE)
 
 # Join mtide to comb_tide
 harms_mtide_four = harms_mtide_four[, .(station_code, tide_time, mtide_level)]
-comb_tide_four = merge(comb_tide_four, harms_mtide_four, by = c("station_code", "tide_time"), all.x = TRUE)
+comb_tide_four = merge(harms_mtide_four, harms_comp, by = c("station_code", "tide_time"), all.x = TRUE)
 
 # Add in remaining data
-comb_tide_four = merge(comb_tide_four, all_harms, by = "station_code", all.x = TRUE)
-comb_tide_four = comb_tide_four[, .(station_name = station_name.x, station_code, time_meridian,
+# comb_tide_four = merge(comb_tide_four, all_harms, by = "station_code", all.x = TRUE)
+comb_tide_four = comb_tide_four[, .(station_name, station_code, time_meridian,
                                     established, removed, epoch_start, epoch_end, n_consts,
                                     tide_time, tide_level, rtide_level, mtide_level)]
 
 # Identify differences ==========================
 
-# Round tide hts   MTIDES LOOKS EXCELLENT !!!!
+# Round tide hts   MTIDES LOOKS MUCH BETTER WITH ALL CONSTS
 comb_tide_four$rtide_level = round(comb_tide_four$rtide_level, digits = 3)
 comb_tide_four$mtide_level = round(comb_tide_four$mtide_level, digits = 3)
 comb_tide_four$difr = abs(comb_tide_four$tide_level - comb_tide_four$rtide_level)
 comb_tide_four$difm = abs(comb_tide_four$tide_level - comb_tide_four$mtide_level)
+is.data.table(comb_tide_four)
+comb_tide_four = comb_tide_four[order(station_name, tide_time), ]
 
 # Max difference for rtide: Result: huge = 10.13451ft
 (max_diff_rtide_four = max(comb_tide_four$difr, na.rm = TRUE) / 0.3048)
 
-# Max difference for mtide: Result: 1.437008 ft. NEED TO INVESTIGATE !!!!!!!!!!!!!!!!!!!!!!!!!!
+# Max difference for mtide: Result: 0.328084 ft. Much better than before (1.437008 ft), but still a bit off.
 (max_diff_mtide_four = max(comb_tide_four$difm, na.rm = TRUE) / 0.3048)
 
 # # Write results to temp table in harmonics DB
@@ -614,342 +643,79 @@ comb_tide_four$difm = abs(comb_tide_four$tide_level - comb_tide_four$mtide_level
 # DBI::dbWriteTable(pg_con, tbl, comb_tide_four, row.names = FALSE, append = TRUE, copy = TRUE)
 # DBI::dbDisconnect(pg_con)
 
-#=======================================================================================
-# Investigate differences further
-#=======================================================================================
-
-# Anchorage is the problem. May not be using all year constituents. Rtide is better !!!!
-
-# Verified Anchorage has 120 constituents in station_constituent table
-# But there are only 111 year constituents in year_constituent table
-# Both Anchorage AK (9455920) and Chatham MA (8447435) have 120 constituents
-# Need to re-upload year_constituents
-
-# Pull out node_year data to see if I have all the node_year constituents in the DB. I do not
-test_harms = rtide::harmonics
-node_year = test_harms$NodeYear
-node_year_df = as.data.table(node_year)
-node_year_2024 = node_year_df[V2 == "2024"]
-node_year_2024 = dcast(node_year_2024, V1 + V2 ~ V3, value.var = "value")
-node_year_2024 = node_year_2024[, .(constituent_code = V1, node_year = V2,
-                                    year_factor = NodeFactor, equilibrium_arg = EquilArg)]
-
-# Update two constituents to new name then check to see all have match in constituent table
-node_year_2024$constituent_code[node_year_2024$constituent_code %in% "LDA2"] = "LAM2"
-node_year_2024$constituent_code[node_year_2024$constituent_code %in% "RHO1"] = "RHO"
-
-# Update remaining constituents uncovered below
-node_year_2024$constituent_code[node_year_2024$constituent_code %in% "SIG1"] = "SIGMA1"
-node_year_2024$constituent_code[node_year_2024$constituent_code %in% "M2(KS)2"] = "M2KS2"
-node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2SN(MK)2"] = "2SNMK2"
-node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2KM(SN)2"] = "2KMSN2"
-node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2MNLS6"] = "2MLNS6"
-node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2(MS)8"] = "2MS8"
-node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2(MN)8"] = "2MN8"
-node_year_2024$constituent_code[node_year_2024$constituent_code %in% "THE1"] = "THETA1"
-node_year_2024$constituent_code[node_year_2024$constituent_code %in% "OQ2"] = "OO2"
-
-# Get all constituents from DB
-qry = glue::glue("select constituent_id, constituent_order, constituent_code ",
-                 "from constituent")
-
-pg_con = pg_con_local(dbname = "harmonics")
-constituents = DBI::dbGetQuery(pg_con, qry)
-DBI::dbDisconnect(pg_con)
-
-# Check if all constituent_codes in constituents are in node_year_2024.
-# They should not all be there, since there are 175 constituents in rtide and only 120 in mtide
-all(constituents$constituent_code %in% node_year_2024$constituent_code)
-
-# Find out which are missing
-constituents$constituent_code[!constituents$constituent_code %in% node_year_2024$constituent_code]
-
-# Join to see which are missing
-consts = merge(constituents, node_year_2024, by = "constituent_code", all.x = TRUE)
-consts = as.data.table(consts)
-consts = consts[order(constituent_order)]
-
-# Need to verify but:
-#     HarmDB          RTide             Confirmed via TideHarmonics?
-# 1.  SIGMA1          sig1              Yes
-# 2.  M2KS2           M2(KS)2           x2K1M.2S2 or 2KM2S2
-# 3.  2SNMK2          2SN(MK)2
-# 4.  2KMSN2          2KM(SN)2
-# 5.  2MLNS6          2MNLS6
-# 6.  2MS8
-# 7.  2MN8
-# 8.  THETA1          THE1
-# 9.  OO2
-
-# Get names of harmonics from TideHarmonics package
-harm_names = TideHarmonics::harmonics
-
-# Inspect Node to see name for final missing constituent: 2MLNS6, or maybe 4MS6: Result: It was 2MNLS6
-rtide_node = test_harms$Node
-rtide_node = as.data.table(rtide_node)
-
-
-
-# NEXT: RUN THROUGH SUBORDINATE STATIONS !!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Print station names
-unique(comb_tide$station_name)
-
-#==================================================================================
-# Plot Tacoma as a check
-#==================================================================================
-
-# Plot Tacoma
-check_tide = comb_tide[station_name == "Tacoma"]
-plot(check_tide$tide_time, check_tide$tide_level, type = "l", col = "blue")
-lines(check_tide$tide_time, check_tide$rtide_level, col = "red")
-lines(check_tide$tide_time, check_tide$mtide_level, col = "green")
-
-#==================================================================================
-# Identify differences where time_meridian is not listed by NOAA as zero
-#==================================================================================
-
-# Round tide hts   MTIDES LOOKS EXCELLENT !!!!
-comb_tide$rtide_level = round(comb_tide$rtide_level, digits = 3)
-comb_tide$mtide_level = round(comb_tide$mtide_level, digits = 3)
-comb_tide$difr = abs(comb_tide$tide_level - comb_tide$rtide_level)
-comb_tide$difm = abs(comb_tide$tide_level - comb_tide$mtide_level)
-
-# Max difference for rtide: Result: 0.321m, fairly substantial = 1.05315ft
-max(comb_tide$difr, na.rm = TRUE)
-0.321 / 0.3048
-
-# Max difference for mtide: Result: 0.001m, just rounding error.
-max(comb_tide$difm, na.rm = TRUE)
-
-# # Check the one missing Charleston, Oregon....Need to re-import harmonics
-# charelston = MarineTides::tide_level("Charleston, OR",
-#                                      start_date = "2024-02-06",
-#                                      end_date = "2024-02-06",
-#                                      data_interval = "60-min",
-#                                      timezone = "UTC",
-#                                      verbose = TRUE)
-
-# Check if any other station_names clash....None left after fixup in TideHarmonicsDB/R/harmonics_cleanup.R
-dup_names = all_stations$station_name[duplicated(all_stations$station_name)]
-dup_stations = subset(all_stations, station_name %in% dup_names)
-dup_stations = dup_stations[order(dup_stations$station_name),]
-
-# Test Atka: < 37 consts
-
-# rtide
-rtide_atka = rtide::tide_height("Atka",
-                                from = as.Date("2024-02-06"),
-                                to = as.Date("2024-02-06"),
-                                minutes = 60L,
-                                tz = "UTC")
-# mtide
-mtide_atka = MarineTides::tide_level("Atka",
-                                     start_date = "2024-02-06",
-                                     end_date = "2024-02-06",
-                                     data_interval = "60-min",
-                                     timezone = "UTC")
-# noaa
-noaa_atka = noaa_tides(station_code = "9461710",
-                       start_date = "2024-02-06",
-                       end_date = "2024-02-06",
-                       time_interval = 60L)
-
-# Combine and compare: mtide excellent, rtide a bit off.
-comb_atka = cbind(noaa_atka, mtide_atka$tide_level, rtide_atka$TideHeight)
-names(comb_atka) = c("tide_time", "station_code", "noaa_tide_level", "mtide_level", "rtide_level")
-
-# Test Lake Worth Pier: < 37 consts
-
-# rtide
-rtide_worth = rtide::tide_height("Lake Worth Pier",
-                                from = as.Date("2024-02-06"),
-                                to = as.Date("2024-02-06"),
-                                minutes = 60L,
-                                tz = "UTC")
-# mtide
-mtide_worth = MarineTides::tide_level("Lake Worth Pier",
-                                     start_date = "2024-02-06",
-                                     end_date = "2024-02-06",
-                                     data_interval = "60-min",
-                                     timezone = "UTC")
-# noaa
-worth_code = mtide_worth$station_code[1]
-noaa_worth = noaa_tides(station_code = worth_code,
-                       start_date = "2024-02-06",
-                       end_date = "2024-02-06",
-                       time_interval = 60L)
-
-# Combine and compare: mtide excellent, rtide a bit off.
-comb_worth = cbind(noaa_worth, mtide_worth$tide_level, rtide_worth$TideHeight)
-names(comb_worth) = c("tide_time", "station_code", "noaa_tide_level", "mtide_level", "rtide_level")
-
-#==================================================================================
-# Run the loop functions on all harm stations with less than 37 consts
-#==================================================================================
-
-# Pull out subset with names and codes
-harms_miss_consts = harms_missing_consts[,c("station_code", "station_name")]
-
-# Get noaa predictions
-tm = Sys.time()
-harms_noaa = noaa_tides_loop(harms_miss_consts,
-                             start_date = "2024-02-06",
-                             end_date = "2024-02-06",
-                             time_interval = "60")
-nd = Sys.time(); nd - tm  # 53.20814 secs
-
-# Get all rtide predictions
-tm = Sys.time()
-harms_rtide = rtide_tides_loop(harms_miss_consts,
-                               start_date = "2024-02-06",
-                               end_date = "2024-02-06")
-nd = Sys.time(); nd - tm  # 0.7237051 secs
-
-# Get all mtide predictions
-tm = Sys.time()
-harms_mtide = mtide_tides_loop(harms_miss_consts,
-                               start_date = "2024-02-06",
-                               end_date = "2024-02-06")
-nd = Sys.time(); nd - tm  # 0.7298121 sec
-
-# Get the initial data back
-harms_noaa = merge(harms_missing_consts, harms_noaa,
-                   by = "station_code", all.x = TRUE)
-
-# Join rtide and noaa as comb_tide
-harms_noaa$tide_time = as.POSIXct(harms_noaa$tide_time, tz = "UTC")
-comb_tide_mc = merge(harms_noaa, harms_rtide, by = c("station_code", "tide_time"), all.x = TRUE)
-
-# Join mtide to comb_tide
-harms_mtide = harms_mtide[, .(station_code, tide_time, mtide_level)]
-comb_tide_mc = merge(comb_tide_mc, harms_mtide, by = c("station_code", "tide_time"), all.x = TRUE)
-comb_tide_mc = comb_tide_mc[, c("station_name", "station_code", "time_meridian", "established", "removed",
-                                "epoch_start", "epoch_end", "n_consts", "tide_time", "tide_level",
-                                "rtide_level", "mtide_level")]
-
-#==================================================================================
-# Identify differences on harms with less than 37 consts
-#==================================================================================
-
-# Round tide hts   MTIDES LOOKS EXCELLENT !!!!
-comb_tide_mc$rtide_level = round(comb_tide_mc$rtide_level, digits = 3)
-comb_tide_mc$mtide_level = round(comb_tide_mc$mtide_level, digits = 3)
-comb_tide_mc$difr = abs(comb_tide_mc$tide_level - comb_tide_mc$rtide_level)
-comb_tide_mc$difm = abs(comb_tide_mc$tide_level - comb_tide_mc$mtide_level)
-
-# Max difference for rtide: Result: 1.711m, Quite substantial = 5.613517ft !!!
-max(comb_tide_mc$difr, na.rm = TRUE)
-1.711 / 0.3048
-
-# Max difference for mtide: Result: 0.001m, just rounding error.
-max(comb_tide_mc$difm, na.rm = TRUE)
-
-#==================================================================================
-# Pull out foreign stations to test vs rtide and noaa
-#==================================================================================
-
-# Get foreign stations
-foreign_st = subset(all_stations, !country_name == "United States")
-
-# Get foreign harmonic stations
-foreign_sth = subset(foreign_st, station_type_code == "H")
-
-# Get foreign subordinate stations
-foreign_sts = subset(foreign_st, station_type_code == "S")
-
-# Check if all foreign_sts reference stations are in all_stations: Result, all present
-all(foreign_sts$station_code %in% all_stations$station_code)
-
-#==================================================================================
-# Test foreign harmonic stations vs rtide and noaa
-#==================================================================================
-
-# Pull out subset with names and codes
-harms_foreign = foreign_sth[,c("station_code", "station_name")]
-
-# Get noaa predictions
-tm = Sys.time()
-harms_noaa = noaa_tides_loop(harms_foreign,
-                             start_date = "2024-02-06",
-                             end_date = "2024-02-06",
-                             time_interval = "60")
-nd = Sys.time(); nd - tm  # 26.24402 secs
-
-# Get all rtide predictions
-tm = Sys.time()
-harms_rtide = rtide_tides_loop(harms_foreign,
-                               start_date = "2024-02-06",
-                               end_date = "2024-02-06")
-nd = Sys.time(); nd - tm  # 0.1125519 secs
-
-# Get all mtide predictions
-tm = Sys.time()
-harms_mtide = mtide_tides_loop(harms_foreign,
-                               start_date = "2024-02-06",
-                               end_date = "2024-02-06")
-nd = Sys.time(); nd - tm  # 0.3823662 secs
-
-# Get the initial data back
-harms_noaa = merge(foreign_sth, harms_noaa,
-                   by = "station_code", all.x = TRUE)
-
-# Join rtide and noaa as comb_tide
-harms_noaa$tide_time = as.POSIXct(harms_noaa$tide_time, tz = "UTC")
-comb_tide_fh = merge(harms_noaa, harms_rtide, by = c("station_code", "tide_time"), all.x = TRUE)
-
-# Join mtide to comb_tide
-harms_mtide = harms_mtide[, .(station_code, tide_time, mtide_level)]
-comb_tide_fh = merge(comb_tide_fh, harms_mtide, by = c("station_code", "tide_time"), all.x = TRUE)
-comb_tide_fh = comb_tide_fh[, c("station_name", "station_code", "time_meridian", "established", "removed",
-                                "epoch_start", "epoch_end", "n_consts", "tide_time", "tide_level",
-                                "rtide_level", "mtide_level")]
-
-#==================================================================================
-# Identify differences on harms with less than 37 consts
-#==================================================================================
-
-# Round tide hts   MTIDES LOOKS EXCELLENT !!!!
-comb_tide_fh$rtide_level = round(comb_tide_fh$rtide_level, digits = 3)
-comb_tide_fh$mtide_level = round(comb_tide_fh$mtide_level, digits = 3)
-comb_tide_fh$difr = abs(comb_tide_fh$tide_level - comb_tide_fh$rtide_level)
-comb_tide_fh$difm = abs(comb_tide_fh$tide_level - comb_tide_fh$mtide_level)
-
-# Max difference for rtide: Result: 0.018m, Noticable = 0.059ft
-max(comb_tide_fh$difr, na.rm = TRUE)
-0.018 / 0.3048
-
-# Max difference for mtide: Result: 0.001m, just rounding error.
-max(comb_tide_fh$difm, na.rm = TRUE)
+# #=======================================================================================
+# # Investigate differences further.....Done. It was all in the missing year_constituents
+# #=======================================================================================
+#
+# # Anchorage is the problem. May not be using all year constituents. Rtide is better !!!!
+#
+# # Verified Anchorage has 120 constituents in station_constituent table
+# # But there are only 111 year constituents in year_constituent table
+# # Both Anchorage AK (9455920) and Chatham MA (8447435) have 120 constituents
+# # Need to re-upload year_constituents
+#
+# # Pull out node_year data to see if I have all the node_year constituents in the DB. I do not
+# test_harms = rtide::harmonics
+# node_year = test_harms$NodeYear
+# node_year_df = as.data.table(node_year)
+# node_year_2024 = node_year_df[V2 == "2024"]
+# node_year_2024 = dcast(node_year_2024, V1 + V2 ~ V3, value.var = "value")
+# node_year_2024 = node_year_2024[, .(constituent_code = V1, node_year = V2,
+#                                     year_factor = NodeFactor, equilibrium_arg = EquilArg)]
+#
+# # Update two constituents to new name then check to see all have match in constituent table
+# node_year_2024$constituent_code[node_year_2024$constituent_code %in% "LDA2"] = "LAM2"
+# node_year_2024$constituent_code[node_year_2024$constituent_code %in% "RHO1"] = "RHO"
+#
+# # Update remaining constituents uncovered below
+# node_year_2024$constituent_code[node_year_2024$constituent_code %in% "SIG1"] = "SIGMA1"
+# node_year_2024$constituent_code[node_year_2024$constituent_code %in% "M2(KS)2"] = "M2KS2"
+# node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2SN(MK)2"] = "2SNMK2"
+# node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2KM(SN)2"] = "2KMSN2"
+# node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2MNLS6"] = "2MLNS6"
+# node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2(MS)8"] = "2MS8"
+# node_year_2024$constituent_code[node_year_2024$constituent_code %in% "2(MN)8"] = "2MN8"
+# node_year_2024$constituent_code[node_year_2024$constituent_code %in% "THE1"] = "THETA1"
+# node_year_2024$constituent_code[node_year_2024$constituent_code %in% "OQ2"] = "OO2"
+#
+# # Get all constituents from DB
+# qry = glue::glue("select constituent_id, constituent_order, constituent_code ",
+#                  "from constituent")
+#
+# pg_con = pg_con_local(dbname = "harmonics")
+# constituents = DBI::dbGetQuery(pg_con, qry)
+# DBI::dbDisconnect(pg_con)
+#
+# # Check if all constituent_codes in constituents are in node_year_2024.
+# # They should not all be there, since there are 175 constituents in rtide and only 120 in mtide
+# all(constituents$constituent_code %in% node_year_2024$constituent_code)
+#
+# # Find out which are missing
+# constituents$constituent_code[!constituents$constituent_code %in% node_year_2024$constituent_code]
+#
+# # Join to see which are missing
+# consts = merge(constituents, node_year_2024, by = "constituent_code", all.x = TRUE)
+# consts = as.data.table(consts)
+# consts = consts[order(constituent_order)]
+#
+# # Need to verify but:
+# #     HarmDB          RTide             Confirmed via TideHarmonics?
+# # 1.  SIGMA1          sig1              Yes
+# # 2.  M2KS2           M2(KS)2           x2K1M.2S2 or 2KM2S2
+# # 3.  2SNMK2          2SN(MK)2
+# # 4.  2KMSN2          2KM(SN)2
+# # 5.  2MLNS6          2MNLS6
+# # 6.  2MS8
+# # 7.  2MN8
+# # 8.  THETA1          THE1
+# # 9.  OO2
+#
+# # Get names of harmonics from TideHarmonics package
+# harm_names = TideHarmonics::harmonics
+#
+# # Inspect Node to see name for final missing constituent: 2MLNS6, or maybe 4MS6: Result: It was 2MNLS6
+# rtide_node = test_harms$Node
+# rtide_node = as.data.table(rtide_node)
 
 #==================================================================================
 # Test foreign subordinate stations vs rtide and noaa
@@ -962,89 +728,385 @@ max(comb_tide_fh$difm, na.rm = TRUE)
 #                         end_date = "2024-02-06",
 #                         data_interval = "high-low")
 
+#==================================================================================
+# Run the loop functions on first set of subordinate stations
+#==================================================================================
+
 # Pull out subset with names and codes
-subs_foreign = foreign_sts[,c("station_code", "station_name")]
+is.data.table(all_subs)
+subs_one = all_subs[1:500, .(station_code, station_name)]
+
+# =========================================================
 
 # Get noaa predictions
 tm = Sys.time()
-subs_noaa = noaa_tides_loop(subs_foreign,
-                            start_date = "2024-02-06",
-                            end_date = "2024-02-06",
-                            time_interval = "hilo")
-nd = Sys.time(); nd - tm  # 53.20814 secs
+subs_noaa_one = noaa_tides_loop(subs_one,
+                                start_date = "2024-02-06",
+                                end_date = "2024-02-06",
+                                time_interval = "hilo")
+nd = Sys.time(); nd - tm  #  21.58158 mins
 
-# Identify any missing stations: None: Got some errors that relooped till successful.
-# All data were retrieved as intended. No more errors for Malakal, or APIA
-length(unique(subs_foreign$station_code))
-length(unique(subs_noaa$station_code))
+# =========================================================
+
+# Get all mtide predictions
+tm = Sys.time()
+subs_mtide_one = mtide_tides_loop(subs_one,
+                                  start_date = "2024-02-06",
+                                  end_date = "2024-02-06",
+                                  data_interval = "high-low")
+nd = Sys.time(); nd - tm  #  1.621772 mins
+
+# =========================================================
+
+# Identify any missing stations in NOAA data: None: Got some errors that relooped till successful.
+length(unique(subs_one$station_code))
+length(unique(subs_noaa_one$station_code))
 
 # # Inspect...Malakal Harbor failed. No predictions, remove
 # subs_noaa = subset(subs_noaa, !is.na(tide_level))
 
 # Add id variables to allow comparison
-subs_noaa_dt = as.data.table(subs_noaa)
-subs_noaa_dt$id = rowidv(subs_noaa_dt, cols = c("station_code", "tide_type"))
-subs_noaa_dt = subs_noaa_dt[, hl_tides := paste0(tide_type, "-", id)]
-subs_noaa_dt = subs_noaa_dt[, .(station_code, hl_tides, noaa_tide_time = tide_time, noaa_tide_level = tide_level)]
-
-# Get all mtide predictions
-tm = Sys.time()
-subs_mtide = mtide_tides_loop(subs_foreign,
-                              start_date = "2024-02-06",
-                              end_date = "2024-02-06",
-                              data_interval = "high-low")
-nd = Sys.time(); nd - tm  # 14.03711 secs
+subs_noaa_one_dt = as.data.table(subs_noaa_one)
+subs_noaa_one_dt$id = rowidv(subs_noaa_one_dt, cols = c("station_code", "tide_type"))
+subs_noaa_one_dt = subs_noaa_one_dt[, hl_tides := paste0(tide_type, "-", id)]
+subs_noaa_one_dt = subs_noaa_one_dt[, .(station_code, hl_tides, noaa_tide_time = tide_time, noaa_tide_level = tide_level)]
 
 # Identify any missing stations: Result: No more missing now that APIA has harmonics
-length(unique(subs_mtide$station_code))
+length(unique(subs_mtide_one$station_code))
 # missing_subs = subs_foreign$station_code[!subs_foreign$station_code %in% subs_mtide$station_code]
 # missing_foreign_sts = subset(foreign_sts, station_code %in% missing_subs)
 
-# # Dump any data not within the start_date, end_date. Sometimes tides are predicted for following day
-# is.data.table(subs_mtide)
-# subs_mtide_trim = subs_mtide[inrange(tide_time, as.POSIXct("2024-02-06", tz = "UTC"),
-#                                      as.POSIXct("2024-02-07", tz = "UTC"))]
-
-# Get the initial data back
-subs_noaa_dt = merge(foreign_sts, subs_noaa_dt,
-                     by = "station_code", all.x = TRUE)
+# Add back full set of data
+subs_noaa_one_dt = merge(subs_noaa_one_dt, all_subs,
+                         by = "station_code", all.x = TRUE)
 
 # Add id variables to allow comparison
-subs_mtide_dt = as.data.table(subs_mtide)
-subs_mtide_dt$id = rowidv(subs_mtide_dt, cols = c("station_code", "tide_type"))
-subs_mtide_dt = subs_mtide_dt[, hl_tides := paste0(tide_type, "-", id)]
-subs_mtide_dt = subs_mtide_dt[, .(station_code, hl_tides, mtide_tide_time = tide_time, mtide_tide_level = mtide_level)]
+subs_mtide_one_dt = as.data.table(subs_mtide_one)
+subs_mtide_one_dt$id = rowidv(subs_mtide_one_dt, cols = c("station_code", "tide_type"))
+subs_mtide_one_dt = subs_mtide_one_dt[, hl_tides := paste0(tide_type, "-", id)]
+subs_mtide_one_dt = subs_mtide_one_dt[, .(station_code, hl_tides, mtide_tide_time = tide_time, mtide_tide_level = mtide_level)]
 
 # Join mtide and noaa as comb_tide
-subs_noaa_dt$noaa_tide_time = as.POSIXct(subs_noaa_dt$noaa_tide_time, tz = "UTC")
-comb_tide_fs = merge(subs_noaa_dt, subs_mtide_dt, by = c("station_code", "hl_tides"), all.x = TRUE)
-comb_tide_fs = comb_tide_fs[, c("station_name", "station_code", "ref_station_code", "time_meridian",
-                                "tide_type", "established", "removed", "epoch_start", "epoch_end",
-                                "n_consts", "hl_tides", "noaa_tide_time", "mtide_tide_time",
-                                "noaa_tide_level", "mtide_tide_level")]
+subs_noaa_one_dt$noaa_tide_time = as.POSIXct(subs_noaa_one_dt$noaa_tide_time, tz = "UTC")
+comb_subs_one = merge(subs_noaa_one_dt, subs_mtide_one_dt, by = c("station_code", "hl_tides"), all.x = TRUE)
+is.data.table(comb_subs_one)
+comb_subs_one = comb_subs_one[, .(station_name, station_code, ref_station_code, time_meridian,
+                                  tide_type, established, removed, epoch_start, epoch_end,
+                                  n_consts, hl_tides, noaa_tide_time, mtide_tide_time,
+                                  noaa_tide_level, mtide_tide_level)]
 
 # Add ref station name, just for curiosity to see how far away
 all_stations_dt = as.data.table(all_stations)
 ref_names = all_stations_dt[, .(ref_station_code = station_code, ref_station_name = station_name)]
-comb_tide_fs = merge(comb_tide_fs, ref_names, by = "ref_station_code", all.x = TRUE)
+comb_subs_one = merge(comb_subs_one, ref_names, by = "ref_station_code", all.x = TRUE)
 
 # Round tide hts
-# is.data.table(comb_tide_fs)
-comb_tide_fs$mtide_tide_level = round(comb_tide_fs$mtide_tide_level, digits = 3)
+# is.data.table(comb_subs_one)
+comb_subs_one$mtide_tide_level = round(comb_subs_one$mtide_tide_level, digits = 3)
 
 # Compute diffs: Result: Excellent. All now within 60 secs, and 0.001 meter.
-comb_tide_fs = as.data.table(comb_tide_fs)
-comb_tide_fs = comb_tide_fs[, ':=' (time_diff = abs(noaa_tide_time - mtide_tide_time),
-                                    level_diff = abs(noaa_tide_level - mtide_tide_level))]
-comb_tide_fs = comb_tide_fs[order(station_name, noaa_tide_time)]
+comb_subs_one = comb_subs_one[, ':=' (time_diff = abs(noaa_tide_time - mtide_tide_time),
+                                      level_diff = abs(noaa_tide_level - mtide_tide_level))]
+comb_subs_one = comb_subs_one[order(station_name, noaa_tide_time)]
 
-#==================================================================================
-# Identify differences on subs from foreign stations
-#==================================================================================
+# Identify differences on subs ==================================
 
 # Max difference for mtide: Result: 0.001m, just rounding error.
-max(comb_tide_fs$level_diff)
-max(comb_tide_fs$time_diff)
+max(comb_subs_one$level_diff)
+max(comb_subs_one$time_diff)
+
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "subs_comparison")
+# DBI::dbWriteTable(pg_con, tbl, comb_subs_one, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
+
+#==================================================================================
+# Run the loop functions on second set of subordinate stations
+#==================================================================================
+
+# Pull out subset with names and codes
+subs_two = all_subs[501:1000, .(station_code, station_name)]
+
+# =========================================================
+
+# Get noaa predictions
+tm = Sys.time()
+subs_noaa_two = noaa_tides_loop(subs_two,
+                                start_date = "2024-02-06",
+                                end_date = "2024-02-06",
+                                time_interval = "hilo")
+nd = Sys.time(); nd - tm  #  22.46601 mins
+
+# =========================================================
+
+# Get all mtide predictions
+tm = Sys.time()
+subs_mtide_two = mtide_tides_loop(subs_two,
+                                  start_date = "2024-02-06",
+                                  end_date = "2024-02-06",
+                                  data_interval = "high-low")
+nd = Sys.time(); nd - tm  #  1.597979 mins
+
+# =========================================================
+
+# Identify any missing stations in NOAA data: None: Got some errors that relooped till successful.
+length(unique(subs_two$station_code))
+length(unique(subs_noaa_two$station_code))
+
+# # Inspect...Malakal Harbor failed. No predictions, remove
+# subs_noaa = subset(subs_noaa, !is.na(tide_level))
+
+# Add id variables to allow comparison
+subs_noaa_two_dt = as.data.table(subs_noaa_two)
+subs_noaa_two_dt$id = rowidv(subs_noaa_two_dt, cols = c("station_code", "tide_type"))
+subs_noaa_two_dt = subs_noaa_two_dt[, hl_tides := paste0(tide_type, "-", id)]
+subs_noaa_two_dt = subs_noaa_two_dt[, .(station_code, hl_tides, noaa_tide_time = tide_time, noaa_tide_level = tide_level)]
+
+# Identify any missing stations: Result: No more missing now that APIA has harmonics
+length(unique(subs_mtide_two$station_code))
+# missing_subs = subs_foreign$station_code[!subs_foreign$station_code %in% subs_mtide$station_code]
+# missing_foreign_sts = subset(foreign_sts, station_code %in% missing_subs)
+
+# Add back full set of data
+subs_noaa_two_dt = merge(subs_noaa_two_dt, all_subs,
+                         by = "station_code", all.x = TRUE)
+
+# Add id variables to allow comparison
+subs_mtide_two_dt = as.data.table(subs_mtide_two)
+subs_mtide_two_dt$id = rowidv(subs_mtide_two_dt, cols = c("station_code", "tide_type"))
+subs_mtide_two_dt = subs_mtide_two_dt[, hl_tides := paste0(tide_type, "-", id)]
+subs_mtide_two_dt = subs_mtide_two_dt[, .(station_code, hl_tides, mtide_tide_time = tide_time, mtide_tide_level = mtide_level)]
+
+# No NOAA prediction for 8722338 Jensen Beach. Website says: Tide predictions are not available for this station. Omit
+subs_noaa_two_dt = subs_noaa_two_dt[!is.na(noaa_tide_level)]
+
+# Join mtide and noaa as comb_tide
+subs_noaa_two_dt$noaa_tide_time = as.POSIXct(subs_noaa_two_dt$noaa_tide_time, tz = "UTC")
+comb_subs_two = merge(subs_noaa_two_dt, subs_mtide_two_dt, by = c("station_code", "hl_tides"), all.x = TRUE)
+is.data.table(comb_subs_two)
+comb_subs_two = comb_subs_two[, .(station_name, station_code, ref_station_code, time_meridian,
+                                  tide_type, established, removed, epoch_start, epoch_end,
+                                  n_consts, hl_tides, noaa_tide_time, mtide_tide_time,
+                                  noaa_tide_level, mtide_tide_level)]
+
+# Add ref station name, just for curiosity to see how far away
+# all_stations_dt = as.data.table(all_stations)
+#ref_names = all_stations_dt[, .(ref_station_code = station_code, ref_station_name = station_name)]
+comb_subs_two = merge(comb_subs_two, ref_names, by = "ref_station_code", all.x = TRUE)
+
+# Round tide hts
+# is.data.table(comb_subs_one)
+comb_subs_two$mtide_tide_level = round(comb_subs_two$mtide_tide_level, digits = 3)
+
+# Compute diffs: Result: Excellent. All now within 60 secs, and 0.001 meter.
+comb_subs_two = comb_subs_two[, ':=' (time_diff = abs(noaa_tide_time - mtide_tide_time),
+                                      level_diff = abs(noaa_tide_level - mtide_tide_level))]
+comb_subs_two = comb_subs_two[order(station_name, noaa_tide_time)]
+
+# Identify differences on subs ==================================
+
+# Max difference for mtide: Result: 0.243m, Investigate!!!!.
+max(comb_subs_two$level_diff)
+max(comb_subs_two$time_diff)
+
+# Issues:
+# 1. Ankona 8722274
+# 2. Sewall Point 8723178
+
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "subs_comparison")
+# DBI::dbWriteTable(pg_con, tbl, comb_subs_two, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
+
+#==================================================================================
+# Run the loop functions on third set of subordinate stations
+#==================================================================================
+
+# Pull out subset with names and codes
+subs_three = all_subs[1001:1500, .(station_code, station_name)]
+
+# =========================================================
+
+# Get noaa predictions
+tm = Sys.time()
+subs_noaa_three = noaa_tides_loop(subs_three,
+                                  start_date = "2024-02-06",
+                                  end_date = "2024-02-06",
+                                  time_interval = "hilo")
+nd = Sys.time(); nd - tm  #  20.36048 mins
+
+# =========================================================
+
+# Get all mtide predictions
+tm = Sys.time()
+subs_mtide_three = mtide_tides_loop(subs_three,
+                                    start_date = "2024-02-06",
+                                    end_date = "2024-02-06",
+                                    data_interval = "high-low")
+nd = Sys.time(); nd - tm  #  1.624548 mins
+
+# =========================================================
+
+# Identify any missing stations in NOAA data: None: Got some errors that relooped till successful.
+length(unique(subs_three$station_code))
+length(unique(subs_noaa_three$station_code))
+
+# # Inspect...Malakal Harbor failed. No predictions, remove
+# subs_noaa = subset(subs_noaa, !is.na(tide_level))
+
+# Add id variables to allow comparison
+subs_noaa_three_dt = as.data.table(subs_noaa_three)
+subs_noaa_three_dt$id = rowidv(subs_noaa_three_dt, cols = c("station_code", "tide_type"))
+subs_noaa_three_dt = subs_noaa_three_dt[, hl_tides := paste0(tide_type, "-", id)]
+subs_noaa_three_dt = subs_noaa_three_dt[, .(station_code, hl_tides, noaa_tide_time = tide_time, noaa_tide_level = tide_level)]
+
+# Identify any missing stations: Result: No more missing now that APIA has harmonics
+length(unique(subs_mtide_three$station_code))
+# missing_subs = subs_foreign$station_code[!subs_foreign$station_code %in% subs_mtide$station_code]
+# missing_foreign_sts = subset(foreign_sts, station_code %in% missing_subs)
+
+# Add back full set of data
+subs_noaa_three_dt = merge(subs_noaa_three_dt, all_subs,
+                           by = "station_code", all.x = TRUE)
+
+# Add id variables to allow comparison
+subs_mtide_three_dt = as.data.table(subs_mtide_three)
+subs_mtide_three_dt$id = rowidv(subs_mtide_three_dt, cols = c("station_code", "tide_type"))
+subs_mtide_three_dt = subs_mtide_three_dt[, hl_tides := paste0(tide_type, "-", id)]
+subs_mtide_three_dt = subs_mtide_three_dt[, .(station_code, hl_tides, mtide_tide_time = tide_time, mtide_tide_level = mtide_level)]
+
+# Join mtide and noaa as comb_tide
+subs_noaa_three_dt$noaa_tide_time = as.POSIXct(subs_noaa_three_dt$noaa_tide_time, tz = "UTC")
+comb_subs_three = merge(subs_noaa_three_dt, subs_mtide_three_dt, by = c("station_code", "hl_tides"), all.x = TRUE)
+is.data.table(comb_subs_three)
+comb_subs_three = comb_subs_three[, .(station_name, station_code, ref_station_code, time_meridian,
+                                      tide_type, established, removed, epoch_start, epoch_end,
+                                      n_consts, hl_tides, noaa_tide_time, mtide_tide_time,
+                                      noaa_tide_level, mtide_tide_level)]
+
+# Add ref station name, just for curiosity to see how far away
+# all_stations_dt = as.data.table(all_stations)
+#ref_names = all_stations_dt[, .(ref_station_code = station_code, ref_station_name = station_name)]
+comb_subs_three = merge(comb_subs_three, ref_names, by = "ref_station_code", all.x = TRUE)
+
+# Round tide hts
+# is.data.table(comb_subs_one)
+comb_subs_three$mtide_tide_level = round(comb_subs_three$mtide_tide_level, digits = 3)
+
+# Compute diffs: Result: Excellent. All now within 60 secs, and 0.001 meter.
+comb_subs_three = comb_subs_three[, ':=' (time_diff = abs(noaa_tide_time - mtide_tide_time),
+                                          level_diff = abs(noaa_tide_level - mtide_tide_level))]
+comb_subs_three = comb_subs_three[order(station_name, noaa_tide_time)]
+
+# Identify differences on subs ==================================
+
+# Max difference for mtide: Result: 0.001m, just rounding error.
+max(comb_subs_three$level_diff, na.rm = TRUE)
+max(comb_subs_three$time_diff, na.rm = TRUE)
+
+# Issues with:
+# 1. Cat Point 8728619
+# 2. Little Hickory Island 8725283
+
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "subs_comparison")
+# DBI::dbWriteTable(pg_con, tbl, comb_subs_three, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
+
+#==================================================================================
+# Run the loop functions on fourth set of subordinate stations
+#==================================================================================
+
+# Pull out subset with names and codes
+subs_four = all_subs[1501:2194, .(station_code, station_name)]
+
+# =========================================================
+
+# Get noaa predictions
+tm = Sys.time()
+subs_noaa_four = noaa_tides_loop(subs_four,
+                                 start_date = "2024-02-06",
+                                 end_date = "2024-02-06",
+                                 time_interval = "hilo")
+nd = Sys.time(); nd - tm  #  28.24049 mins
+
+# =========================================================
+
+# Get all mtide predictions
+tm = Sys.time()
+subs_mtide_four = mtide_tides_loop(subs_four,
+                                   start_date = "2024-02-06",
+                                   end_date = "2024-02-06",
+                                   data_interval = "high-low")
+nd = Sys.time(); nd - tm  #  2.244147 mins
+
+# =========================================================
+
+# Identify any missing stations in NOAA data: None: Got some errors that relooped till successful.
+length(unique(subs_four$station_code))
+length(unique(subs_noaa_four$station_code))
+
+# # Inspect...Malakal Harbor failed. No predictions, remove
+# subs_noaa = subset(subs_noaa, !is.na(tide_level))
+
+# Add id variables to allow comparison
+subs_noaa_four_dt = as.data.table(subs_noaa_four)
+subs_noaa_four_dt$id = rowidv(subs_noaa_four_dt, cols = c("station_code", "tide_type"))
+subs_noaa_four_dt = subs_noaa_four_dt[, hl_tides := paste0(tide_type, "-", id)]
+subs_noaa_four_dt = subs_noaa_four_dt[, .(station_code, hl_tides, noaa_tide_time = tide_time, noaa_tide_level = tide_level)]
+
+# Identify any missing stations: Result: No more missing now that APIA has harmonics
+length(unique(subs_mtide_four$station_code))
+# missing_subs = subs_foreign$station_code[!subs_foreign$station_code %in% subs_mtide$station_code]
+# missing_foreign_sts = subset(foreign_sts, station_code %in% missing_subs)
+
+# Add back full set of data
+subs_noaa_four_dt = merge(subs_noaa_four_dt, all_subs,
+                          by = "station_code", all.x = TRUE)
+
+# Add id variables to allow comparison
+subs_mtide_four_dt = as.data.table(subs_mtide_four)
+subs_mtide_four_dt$id = rowidv(subs_mtide_four_dt, cols = c("station_code", "tide_type"))
+subs_mtide_four_dt = subs_mtide_four_dt[, hl_tides := paste0(tide_type, "-", id)]
+subs_mtide_four_dt = subs_mtide_four_dt[, .(station_code, hl_tides, mtide_tide_time = tide_time, mtide_tide_level = mtide_level)]
+
+# Join mtide and noaa as comb_tide
+subs_noaa_four_dt$noaa_tide_time = as.POSIXct(subs_noaa_four_dt$noaa_tide_time, tz = "UTC")
+comb_subs_four = merge(subs_noaa_four_dt, subs_mtide_four_dt, by = c("station_code", "hl_tides"), all.x = TRUE)
+is.data.table(comb_subs_four)
+comb_subs_four = comb_subs_four[, .(station_name, station_code, ref_station_code, time_meridian,
+                                    tide_type, established, removed, epoch_start, epoch_end,
+                                    n_consts, hl_tides, noaa_tide_time, mtide_tide_time,
+                                    noaa_tide_level, mtide_tide_level)]
+
+# Add ref station name, just for curiosity to see how far away
+# all_stations_dt = as.data.table(all_stations)
+#ref_names = all_stations_dt[, .(ref_station_code = station_code, ref_station_name = station_name)]
+comb_subs_four = merge(comb_subs_four, ref_names, by = "ref_station_code", all.x = TRUE)
+
+# Round tide hts
+# is.data.table(comb_subs_one)
+comb_subs_four$mtide_tide_level = round(comb_subs_four$mtide_tide_level, digits = 3)
+
+# Compute diffs: Result: Excellent. All now within 60 secs, and 0.001 meter.
+comb_subs_four = comb_subs_four[, ':=' (time_diff = abs(noaa_tide_time - mtide_tide_time),
+                                        level_diff = abs(noaa_tide_level - mtide_tide_level))]
+comb_subs_four = comb_subs_four[order(station_name, noaa_tide_time)]
+
+# Identify differences on subs ==================================
+
+# Max difference for mtide: Result: 0.001m, just rounding error.
+max(comb_subs_four$level_diff)
+max(comb_subs_four$time_diff)
+
+# Write results to temp table in harmonics DB
+pg_con = pg_con_local(dbname = "harmonics")
+tbl = Id(schema = "public", table = "subs_comparison")
+DBI::dbWriteTable(pg_con, tbl, comb_subs_four, row.names = FALSE, append = TRUE, copy = TRUE)
+DBI::dbDisconnect(pg_con)
 
 
 #=================================================================================
