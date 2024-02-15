@@ -114,8 +114,8 @@ get_reference_station = function(station_code, verbose, harms = MarineTides::har
                      "{ref_station_name}, is located {ref_station_km} km. away. Tide levels are ", "\n ",
                      "calculated from {ref_station_name} harmonic constituents at one ", "\n ",
                      "minute increments. Values for high and low tide are extracted, ", "\n ",
-                     "then time and height corrections from {ref_station_name} are applied to  ", "\n ",
-                     "the {station_name} predictions."), "\n\n")
+                     "then time and height offset corrections are applied to obtain the ", "\n ",
+                     "{station_name} predictions."), "\n\n")
     }
   }
   return(ref_station_code)
