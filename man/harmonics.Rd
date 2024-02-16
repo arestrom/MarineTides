@@ -11,14 +11,18 @@ An object of class \code{list} of length 5.
 harmonics
 }
 \description{
-A set of harmonic data for NOAA CO-OPS tide stations. Also includes year constituents.
+A set of harmonic data for NOAA CO-OPS tide stations. Also includes node year constituents.
 }
 \details{
-All tide station data, including constituent data and subordinate station offsets, were
+All tide station data, including harmonic constituents and subordinate station offsets, were
 downloaded from the [NOAA CO-OPS Data API](https://api.tidesandcurrents.noaa.gov/api/prod/)
-Year constituent data captures the effects of the 18.6 year orbital cycle on amplitudes
-of tidal constituents. Values for years 1700 to 2100 were extracted from the [rtide::harmonics]
+Lunar node year data captures the effects of the 18.6 year lunar orbital cycle on amplitudes
+and phase of tidal constituents. Values for years 1700 to 2100 were extracted from the [rtide::harmonics]
 data originally processed by David Flater for [XTide](https://flaterco.com/xtide/) and repackaged
-for use in the`rtide` package by Joe Thorley of Poisson Consulting Ltd.
+for use in the`rtide` package by Joe Thorley of Poisson Consulting Ltd. The names of some constituents
+needed to be updated to match naming conventions used by NOAA CO-OPS. The [`TideHarmonics::harmonics`](https://cran.r-project.org/web/packages/TideHarmonics/TideHarmonics.pdf)
+dataset was used to aid in making translations between naming conventions. Documentation associated
+with the `congen` program at [`XTide`](https://flaterco.com/files/xtide/congen_input.txt) was also
+used as a resource to update constituent names.
 }
 \keyword{datasets}
