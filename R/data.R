@@ -3,18 +3,20 @@
 #'
 #' @description
 #' A set of harmonic data for NOAA CO-OPS tide stations. Also includes node year constituents.
-#' \url{https://github.com/arestrom/iformr}
-#' - [R introduction vignette](https://docs.ropensci.org/magick/articles/intro.html): getting started
 #'
 #' @details
 #' All tide station data, including harmonic constituents and subordinate station offsets, were
-#' downloaded from the - [NOAA CO-OPS Data API](https://api.tidesandcurrents.noaa.gov/api/prod/)
+#' downloaded from the \href{https://api.tidesandcurrents.noaa.gov/api/prod/}{NOAA CO-OPS Data API}
+#'
 #' Lunar node year data captures the effects of the 18.6 year lunar orbital cycle on amplitudes
-#' and phase of tidal constituents. Values for years 1700 to 2100 were extracted from the [rtide::harmonics]
-#' data originally processed by David Flater for [XTide](https://flaterco.com/xtide/) and repackaged
-#' for use in the`rtide` package by Joe Thorley of Poisson Consulting Ltd. The names of some constituents
-#' needed to be updated to match naming conventions used by NOAA CO-OPS. The [`TideHarmonics::harmonics`](https://cran.r-project.org/web/packages/TideHarmonics/TideHarmonics.pdf)
+#' and phase of tidal constituents. Values for years 1700 to 2100 were extracted from the
+#' \href{https://github.com/poissonconsulting/rtide/tree/main/data}{rtide::harmonics}
+#' dataset originally processed by David Flater for \href{https://flaterco.com/xtide/}{XTide} and repackaged
+#' for use in the \code{rtide} package by Joe Thorley of Poisson Consulting Ltd.
+#'
+#' The names of some constituents needed to be updated to match naming conventions used by NOAA CO-OPS. The
+#' \href{https://cran.r-project.org/web/packages/TideHarmonics/TideHarmonics.pdf}{`TideHarmonics::harmonics`}
 #' dataset was used to aid in making translations between naming conventions. Documentation associated
-#' with the `congen` program at [`XTide`](https://flaterco.com/files/xtide/congen_input.txt) was also
-#' used as a resource to update constituent names.
+#' with the \code{congen} program at \href{https://flaterco.com/files/xtide/congen_input.txt}{`XTide`}
+#' served as an additional resource to update constituent names.
 "harmonics"
