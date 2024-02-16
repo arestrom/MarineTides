@@ -62,11 +62,11 @@ station estimates.
 The `MarineTides` package is motivated by need for large volumes of tide
 predictions, often at one-minute increments. Primary uses are for
 intertidal shellfish management, and for climate-related marine
-research. The [`rtide`](https://github.com/poissonconsulting/rtide) has
-ably filled this need in the past, but speed can become an issue when
-longer time-series at higher resolutions are needed. NOAA sensibly
-limits the amount of data that can be downloaded in one batch, and
-`rtide` can take several minutes to churn out a full years worth of
+research. The [`rtide`](https://github.com/poissonconsulting/rtide)
+package has ably filled this need in the past, but speed can become an
+issue when longer time-series at higher resolutions are needed. NOAA
+sensibly limits the amount of data that can be downloaded in one batch,
+and `rtide` can take several minutes to churn out a full years worth of
 predictions at one-minute intervals. Another limitation of `rtide` is
 that it does not allow for tide predictions at subordinate stations.
 
