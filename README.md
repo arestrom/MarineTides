@@ -31,14 +31,17 @@ estuaries.
 All station data, including harmonic constituents, were downloaded from
 the [NOAA CO-OPS API for Data
 Retrieval](https://api.tidesandcurrents.noaa.gov/api/prod/#products).
-Lunar nodal corrections for years 1700 through 2100 were obtained from
-Joe Thorley’s [`rtide`](https://github.com/poissonconsulting/rtide)
-`harmonics` dataset, which ultimately was derived from David Flater’s
-[`XTide`](https://flaterco.com/xtide/files.html#harmonicsfiles)
-datasets. In order to match NOAA CO-OPS harmonic constituent naming
-conventions, some constituent names needed to be changed. Issues related
-to constituent naming conventions, and derivation of lunar nodal
-corrections are documented at:
+Lunar node year corrections to tidal constituents for years 1700 to 2100
+were extracted from the
+[`rtide::harmonics`](https://github.com/poissonconsulting/rtide/tree/main/data)
+data originally processed by David Flater for
+[XTide](https://flaterco.com/xtide/files.html) and repackaged for use in
+the `rtide` package by Joe Thorley of Poisson Consulting Ltd. The node
+year data captures the effects of the 18.6 year lunar orbital cycle on
+amplitudes and phase of lunar tidal constituents. In order to match NOAA
+CO-OPS harmonic constituent naming conventions, some constituent names
+needed to be updated. Issues related to constituent naming conventions,
+and derivation of lunar nodal corrections are documented at:
 [`XTide`](https://flaterco.com/files/xtide/congen_input.txt).
 
 For tide stations where [NOAA
@@ -83,8 +86,9 @@ reflect changes to station data pushed by
 [`NOAA CO-OPS`](https://tidesandcurrents.noaa.gov/products.html).
 
 `MarineTides` has intentionally been designed with minimal dependencies
-and makes use of functions in the `data.table` package to speed up
-calculations. [NOAA
+and makes use of functions in the
+[`data.table`](https://rdatatable.gitlab.io/data.table/) package to
+speed up calculations. [NOAA
 CO-OPS](https://tidesandcurrents.noaa.gov/about_harmonic_constituents.html)
 has an excellent write-up of the formula and methods used to predict
 tides. The core functions in `MarineTides` were derived in part from Joe
