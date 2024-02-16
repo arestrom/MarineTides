@@ -2,7 +2,7 @@
 #' Predict tide levels for harmonic or subordinate stations
 #'
 #' @description
-#' `tide_level()` generates tide predictions for a `tide_station` from `start_date` to
+#' \code{tide_level()} generates tide predictions for a `tide_station` from `start_date` to
 #' `end_date` at the time interval specified by `data_interval`. The `timezone`, by
 #' default, is that of the specified `tide_station`, but can be set to other zones if
 #' needed.

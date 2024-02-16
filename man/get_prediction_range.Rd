@@ -2,7 +2,7 @@
 % Please edit documentation in R/DatesYears.R
 \name{get_prediction_range}
 \alias{get_prediction_range}
-\title{Generate a sequence of datetime values from `start_date` to `end_date`}
+\title{Generate a sequence of datetime values from \code{start_date} to \code{end_date}.}
 \usage{
 get_prediction_range(start_date, end_date, pred_inc, timezone)
 }
@@ -13,13 +13,13 @@ get_prediction_range(start_date, end_date, pred_inc, timezone)
 
 \item{pred_inc}{An integer field to specify number of minutes between predictions}
 
-\item{timezone}{Typically the timezone of the `tide_station`, but can also be set manually.}
+\item{timezone}{Typically the timezone of the \code{tide_station}, but can also be set manually.}
 }
 \value{
-`get_prediction_range()` returns a vector of datetimes in `UTC` timezone between `start_date`
-and `end_date`. The spacing between datetime values is set by the `pred_inc` variable.
+\code{get_prediction_range()} returns a vector of datetimes in \code{UTC} timezone between \code{start_date}
+and \code{end_date}. The spacing between datetime values is set by the \code{pred_inc} variable.
 }
 \description{
 Generates a vector of datetime values over the requested time span for tide
-predictions. The timezone of the resulting datetime values will be `UTC`.
+predictions. The timezone of the resulting datetime values will be \code{UTC}.
 }

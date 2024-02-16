@@ -1,18 +1,18 @@
 #' @title
-#' Generate a sequence of datetime values from `start_date` to `end_date`
+#' Generate a sequence of datetime values from \code{start_date} to \code{end_date}.
 #'
 #' @description
 #' Generates a vector of datetime values over the requested time span for tide
-#' predictions. The timezone of the resulting datetime values will be `UTC`.
+#' predictions. The timezone of the resulting datetime values will be \code{UTC}.
 #'
 #' @param start_date A character field for start of prediction timespan
 #' @param end_date A character field for end of prediction timespan
 #' @param pred_inc An integer field to specify number of minutes between predictions
-#' @param timezone Typically the timezone of the `tide_station`, but can also be set manually.
+#' @param timezone Typically the timezone of the \code{tide_station}, but can also be set manually.
 #'
 #' @returns
-#' `get_prediction_range()` returns a vector of datetimes in `UTC` timezone between `start_date`
-#' and `end_date`. The spacing between datetime values is set by the `pred_inc` variable.
+#' \code{get_prediction_range()} returns a vector of datetimes in \code{UTC} timezone between \code{start_date}
+#' and \code{end_date}. The spacing between datetime values is set by the \code{pred_inc} variable.
 #'
 #' @export
 get_prediction_range = function(start_date, end_date, pred_inc, timezone) {

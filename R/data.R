@@ -2,7 +2,7 @@
 #' Harmonics
 #'
 #' @description
-#' A set of harmonic data for NOAA CO-OPS tide stations. Also includes node year constituents.
+#' A set of harmonic data for NOAA CO-OPS tide stations. Includes lunar node year constituent corrections.
 #'
 #' @details
 #' All tide station data, including harmonic constituents and subordinate station offsets, were
