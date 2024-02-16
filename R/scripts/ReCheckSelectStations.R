@@ -240,6 +240,9 @@ all_off = merge(all_off, st_info, by = "station_code", all.x = TRUE)
 subs = all_off[station_type_code == "S"]
 harms = all_off[station_type_code == "H"]
 
+# For latest trial, just pull out Anchorge and Chatham, only two stations with > 37 consts
+harms = harms[station_name %in% c("Chatham", "Anchorage")]
+
 #==================================================================================
 # Run the loop functions on harm stations
 #==================================================================================
@@ -322,18 +325,18 @@ comb_tide$difm = abs(comb_tide$tide_level - comb_tide$mtide_level)
 # Max difference for rtide: Result: 4.123 m, huge = 13.5269 ft
 (max_diff_rtide = max(comb_tide$difr, na.rm = TRUE) / 0.3048)
 
-# Max difference for mtide: Result: 0.1 m, 0.328084 ft.
+# Max difference for mtide: Result: 0.053 m, 0.1738845 ft. Good enough (2 inches). Insufficient data to rename other consts.
 (max_diff_mtide = max(comb_tide$difm, na.rm = TRUE) / 0.3048)
 
 # Dump existing data for stations in comb_tide from harms_comparison, then add new
 st_codes = unique(comb_tide$station_code)
 st_codes = paste0(paste0("'", st_codes, "'"), collapse = ", ")
 
-qry = glue::glue("delete from harms_comparison ",
-                 "where station_code in ({st_codes})")
-pg_con = pg_con_local(dbname = "harmonics")
-DBI::dbExecute(pg_con, qry)
-DBI::dbDisconnect(pg_con)
+# qry = glue::glue("delete from harms_comparison ",
+#                  "where station_code in ({st_codes})")
+# pg_con = pg_con_local(dbname = "harmonics")
+# DBI::dbExecute(pg_con, qry)
+# DBI::dbDisconnect(pg_con)
 
 # Write results to temp table in harmonics DB
 pg_con = pg_con_local(dbname = "harmonics")

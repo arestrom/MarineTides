@@ -13,14 +13,33 @@ GPL3](https://img.shields.io/badge/License-GPL3-blue.svg)](https://www.gnu.org/l
 
 The `MarineTides` package can be used to generate tide predictions for
 3,333 tide stations worldwide. The majority of these stations are
-located in the United States, but others are located in areas adjacent
-to American territories in the Pacific Ocean and Carribbean. This
-includes places such as the Marshall Islands, Fiji, Cuba, and the Virgin
-Islands. Both harmonic and subordinate tide stations are included. At
-current count, there are 1,143 stations with harmonic constituents, and
-2,190 subordinate stations. All station data, including harmonic
-constituents, were downloaded from the [NOAA CO-OPS API for Data
+located in the United States. Remaining stations are located in areas
+adjacent to American territories in the Pacific Ocean and Carribbean.
+This includes places such as the Marshall Islands, Fiji, Cuba, and the
+Virgin Islands. Both harmonic and subordinate tide stations are
+included. At current count, there are 1,143 stations with harmonic
+constituents, and 2,190 subordinate stations.
+
+The package name is intended to distinguish Marine Tides from
+[`Earth Tides`](https://en.wikipedia.org/wiki/Earth_tide), or tides in
+large freshwater bodies such as the
+[`Great Lakes`](https://oceanservice.noaa.gov/facts/gltides.html). The
+`MarineTides` package can only be used to predict tides for stations in
+coastal locations, the open ocean, or marine influenced waters such as
+estuaries.
+
+All station data, including harmonic constituents, were downloaded from
+the [NOAA CO-OPS API for Data
 Retrieval](https://api.tidesandcurrents.noaa.gov/api/prod/#products).
+Lunar nodal corrections for years 1700 through 2100 were obtained from
+Joe Thorley’s [`rtide`](https://github.com/poissonconsulting/rtide)
+`harmonics` dataset, which ultimately was derived from David Flater’s
+[`XTide`](https://flaterco.com/xtide/files.html#harmonicsfiles)
+datasets. In order to match NOAA CO-OPS harmonic constituent naming
+conventions, some constituent names needed to be changed. Issues related
+to constituent naming conventions, and derivation of lunar nodal
+corrections are documented at:
+[`XTide`](https://flaterco.com/files/xtide/congen_input.txt).
 
 For tide stations where [NOAA
 CO-OPS](https://api.tidesandcurrents.noaa.gov/api/prod/#products)
@@ -42,15 +61,15 @@ station estimates.
 
 The `MarineTides` package is motivated by need for large volumes of tide
 predictions, often at one-minute increments. Primary uses are for
-intertidal shellfish fisheries management, and for climate related
-marine research. The [`rtide`
+intertidal shellfish management, and for climate-related marine
+research. The [`rtide`
 package](https://github.com/poissonconsulting/rtide) has ably filled
 this need in the past, but speed can become an issue when longer
 time-series at higher resolutions are needed. NOAA sensibly limits the
 amount of data that can be downloaded in one batch, and `rtide` can take
-several minutes to churn out a full years worth of predictions. Another
-limitation of `rtide` is that it does not allow tide predictions for
-subordinate stations.
+several minutes to churn out a full years worth of predictions at
+one-minute intervals. Another limitation of `rtide` is that it does not
+allow for tide predictions at subordinate stations.
 
 In addition, upcoming revisions of the [National Tidal Datum
 Epoch](https://tidesandcurrents.noaa.gov/datum-updates/ntde/) and the
@@ -60,8 +79,9 @@ suggests the need for a tide prediction package that can be easily
 updated as new datums and harmonic data became available. Minor changes
 to station data commonly occur on a quarterly schedule. Updates to
 datums will likely occur more frequently as climate warms and sea levels
-rise. The aim is to update MarineTides on a semi-regular schedule to
-reflect changes to station data pushed by NOAA CO-OPS.
+rise. The aim is to update `MarineTides` on a semi-regular schedule to
+reflect changes to station data pushed by
+[`NOAA CO-OPS`](https://tidesandcurrents.noaa.gov/products.html).
 
 `MarineTides` has intentionally been designed with minimal dependencies
 and makes use of functions in the `data.table` package to speed up
