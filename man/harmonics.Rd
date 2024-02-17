@@ -24,9 +24,9 @@ dataset originally processed by David Flater for \href{https://flaterco.com/xtid
 for use in the \code{rtide} package by Joe Thorley of Poisson Consulting Ltd.
 
 The names of some constituents needed to be updated to match naming conventions used by NOAA CO-OPS. The
-\href{https://cran.r-project.org/web/packages/TideHarmonics/TideHarmonics.pdf}{`TideHarmonics::harmonics`}
+\href{https://cran.r-project.org/web/packages/TideHarmonics/TideHarmonics.pdf}{TideHarmonics::harmonics}
 dataset was used to aid in making translations between naming conventions. Documentation associated
-with the \code{congen} program at \href{https://flaterco.com/files/xtide/congen_input.txt}{`XTide`}
+with the \code{congen} program at \href{https://flaterco.com/files/xtide/congen_input.txt}{XTide}
 served as an additional resource to update constituent names.
 }
 \keyword{datasets}

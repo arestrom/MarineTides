@@ -33,10 +33,9 @@ tide_level(
 \item{end_date}{A character field for the end date of the tide prediction time-span}
 
 \item{data_interval}{A character value for the time increment between predictions.
-Allowable options include `1-min`, `6-min`, `15-min`, `30-min`, `60-min`, `high-low`,
-`high-only`, `low-only`}
+Allowable options include \code{1-min 6-min, 15-min, 30-min, 60-min, high-low, high-only, low-only}}
 
-\item{timezone}{Typically the timezone of the `tide_station`, but can also be set manually.}
+\item{timezone}{Typically the timezone of the \code{tide_station}, but can also be set manually.}
 
 \item{verbose}{A boolean requesting additional information be printed to the R console.}
 
@@ -46,28 +45,27 @@ Allowable options include `1-min`, `6-min`, `15-min`, `30-min`, `60-min`, `high-
 A dataframe of predicted values. Includes information on the tide station
 }
 \description{
-\code{tide_level()} generates tide predictions for a `tide_station` from `start_date` to
-`end_date` at the time interval specified by `data_interval`. The `timezone`, by
-default, is that of the specified `tide_station`, but can be set to other zones if
+\code{tide_level()} generates tide predictions for a \code{tide_station} from \code{start_date} to
+\code{end_date} at the time interval specified by \code{data_interval}. The \code{timezone}, by
+default, is that of the specified \code{tide_station}, but can be set to other zones if
 needed.
 }
 \details{
-The `harmonics` dataset contains information for over three thousand harmonic and subordinate
+The \code{harmonics} dataset contains information for over three thousand harmonic and subordinate
 tide stations worldwide. Most stations are located in the United States, but stations are also
 included for locations adjacent to USA territories in the Pacific Ocean and the Carribbean.
-The internal [MarineTides::identify_station()] function uses the [data.table::%ilike%] function
-to identify stations in the `harmonics` dataset with similar names. Unless you know the exact
-station name, it is usually better to enter just the first few letters of the station name.
+The internal \code{MarineTides::identify_station()} function uses the \code{data.table::ilike()}
+function to identify stations in the \code{harmonics} dataset with similar names. Unless you know
+the exact station name, it is usually better to enter just the first few letters of the station name.
 This will return a message in the R console with a list of possible matches.
+The \code{start_date} and \code{end_dates} for predictions are parsed by the \code{anytime::anydate()}
+function. This allows dates to be entered in a number of different formats. Typical formats such as
+\code{2024-03-29, 3/29/2024 20240329, 2024.03.29} will return the expected values, but
+entries such as \code{29/3/2024} or \code{3/3/24} will fail to parse and result in an error.
+Toggling the \code{verbose} argument to \code{TRUE} will send a message to the R-console displaying
+the start and end dates requested, or at least the dates that the function thought you intended.
 
-The `start_date` and `end_dates` for predictions are parsed by the [anytime::anydate] function.
-This allows dates to be entered in a number of different formats. Typical formats such as
-`2024-03-29`, `3/29/2024`, `20240329`, `2024.03.29` will return the expected values, but
-entries such as `29/3/2024` or `3/3/24` will fail to parse and result in an error. Toggeling
-the `verbose` argument to `TRUE` will send a message to the R-console displaying the start and
-end dates requested, or as least the dates the function thought you intended.
-
-The `data_interval` variable includes options similar to those available when requesting
+The \code{data_interval} variable includes options similar to those available when requesting
 tide data from the NOAA Tides and Currents website. For harmonic stations, the same set of
 increments from 1 minute, to 60 minutes are provided. You can also request only highs, only
 lows, or both. For subordinate stations, NOAA only allows the latter three options. Because
@@ -76,8 +74,8 @@ high and low values, it would be speculative at best to infer tide levels, or ti
 for other intervals. The shape of tidal curves between highs and lows at subordinate stations
 may differ considerably from those of the reference harmonic stations.
 
-When predictions are requested for subordinate stations, or when the `data_interval` is one
-of `high-low`, `high-only`, `low-only`, the time increment between predictions are set
-to one minute. This allows peaks and valleys in the tidal curve to be found for the daily
-high and low times and levels.
+When predictions are requested for subordinate stations, or when the \code{data_interval}
+is one of \code{high-low, high-only, low-only}, the time increment between predictions are
+internally set to one minute. This allows peaks and valleys in the tidal curve to be found
+for the daily high and low times and levels.
 }

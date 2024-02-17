@@ -14,17 +14,18 @@ get_reference_station(station_code, verbose, harms = MarineTides::harmonics)
 \item{harms}{Harmonics data}
 }
 \value{
-A list of text values including `station_code`, `station_type`, and `timezone`. If the tide
-station is a subordinate station the `station_code` will be that of the harmonic reference
-station. The remaining values, `timezone` and `station_type`, will always belong to the tide
-station identified by the `station_code` variable, regardless of whether it is a subordinate
-or harmonic station.
+A list of text values including \code{station_code, station_type, timezone}. If the tide
+station is a subordinate station the \code{station_code} will be that of the harmonic reference
+station. The remaining values, \code{timezone} and \code{station_type}, will always belong to
+the tide station identified by the \code{station_code} variable, regardless of whether it is
+a subordinate or harmonic station.
 }
 \description{
-Retrieves a list of tide station data including `timezone` and `station_type` (harmonic or
-subordinate). If the `station_type` is subordinate it will retrieve the `station_code`
-for the harmonic reference station, otherwise it will return the same `station_code` that
-was entered as a variable. The `verbose` argument enables printing additional information
-to the console window regarding status of tide station as harmonic or subordinate, and how
-tide predictions are generated for subordinate stations.
+Retrieves a list of tide station data including \code{timezone} and \code{station_type}
+(harmonic or subordinate). If the \code{station_type} is \code{subordinate} it will retrieve
+the \code{station_code} for the harmonic reference station, otherwise it will return the same
+\code{station_code} that was entered as a variable. The \code{verbose} argument enables
+printing additional information to the console window regarding status of tide station
+as \code{harmonic} or \code{subordinate}, and how tide predictions are generated for
+subordinate stations.
 }

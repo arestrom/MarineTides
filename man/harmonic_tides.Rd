@@ -26,7 +26,7 @@ harmonic_tides(
 
 \item{prediction_dts}{A vector of datetimes for the tide prediction.}
 
-\item{timezone}{Typically the timezone of the `tide_station`, but can also be set manually.}
+\item{timezone}{Typically the timezone of the \code{tide_station}, but can also be set manually.}
 
 \item{verbose}{A boolean requesting additional information be printed to the R console.}
 
@@ -36,8 +36,8 @@ harmonic_tides(
 A dataframe of predicted values. Includes information on the tide station
 }
 \description{
-Given a `station_code`, a vector of datetimes (`prediction_dts`), and some additional
-information in the `station_info` list output by [`MarineTides::get_reference_station`],
-`harmonic_tides()` generates tide predictions for one harmonic station. It is the core
-function called by [`MarineTides::tide_level`]
+Given a \code{station_code}, a vector of dates (\code{prediction_dts}), and some additional
+information in the \code{station_info} list output by \code{MarineTides::get_reference_station},
+the \code{harmonic_tides()} function generates tide predictions for one harmonic station. It is
+the core function called by the \code{MarineTides::tide_level()} function.
 }

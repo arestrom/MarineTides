@@ -14,23 +14,23 @@ identify_station(station, verbose, harms = MarineTides::harmonics)
 \item{harms}{Harmonics data}
 }
 \value{
-If a matching name is found `identify_station()` will return a unique `station_code`. This
-is the official station identifier assigned by NOAA CO-OPS. If more than one partial matches
-are found `identify_station()` will issue a message with a list of matching names. If no
+If a matching name is found \code{identify_station()} will return a unique \code{station_code}.
+This is the official station identifier assigned by NOAA CO-OPS. If more than one partial matches
+are found \code{identify_station()} will issue a message with a list of matching names. If no
 matches are found then a message will suggest trying a different spelling.
 }
 \description{
-Inspects `harmonics` data for stations with similar names to the \code{station}
+Inspects \code{harmonics} data for stations with similar names to the \code{station}
 variable. Users can enter either an exact name, or the first few letters. If an exact
 match is not found, it will print a list of possible matches. If no partial matches are
 found then a message will issued to retry using a different spelling.
 }
 \details{
-The `harmonics` dataset contains information for over three thousand harmonic and subordinate
+The \code{harmonics} dataset contains information for over three thousand harmonic and subordinate
 tide stations worldwide. Most stations are located in the United States, but stations are also
 included for locations adjacent to USA territories in the Pacific Ocean and the Carribbean.
-The `identify_station()` function uses the [data.table::%like%] function to identify stations
-in the `harmonics` dataset with similar names. Unless you know the exact station name, it is
+The \code{identify_station()} function uses the \code{data.table::ilike()} function to identify stations
+in the \code{harmonics} dataset with similar names. Unless you know the exact station name, it is
 usually better to enter just the first few letters of the station name. This will return a message
 in the R console with a list of possible matches.
 }
