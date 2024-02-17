@@ -10,22 +10,9 @@
 #               select * from subs_comparison where time_diff >= '00:01:00' order by time_diff desc
 #                    Result: No time_diff > 1 minute off.
 #    For harms: select * from harms_comparison where difm >= 0.003 order by difm desc
-#                    Result: 80 cases, mostly all point estimates for Anchorage and Chatham.
+#                    Result: 80 cases, all were point estimates for Anchorage and Chatham.
 #                            These have 120 constituents. Otherwise, no stations more than
 #                            0.003 m off.
-#
-#  Questions:
-#  1. Do subs all have ref codes and corrections? --Done: All have ref codes and full set of offsets.
-#  2. Do harms all have at least 37 constituents, and have any been removed? --No, some have less,
-#     Of stations with < 37 constituents, all but Atka and Lake Worth Pier have had stations removed.
-#  5. Create a leaflet interface to identify stations?
-#  6. Do a better job with identify_station() function  -- Done
-#  7. For now, filter out stations with meridians other than 0?    -- No, when set to zero, output correct.
-#  8. Redo harmonics data to eliminate unneeded harmonic stations. -- No will keep, but warn if removed!
-#  9. Rewrite docs to give new counts.
-# 10. Use leaflet tools to find stations in search box?
-# 11. Use a markdown page an an interface?
-# 12. Do foreign station predictions match NOAA web output?  -- Yes
 #
 # AS 2024-02-05
 #====================================================================================

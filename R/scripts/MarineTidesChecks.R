@@ -291,7 +291,7 @@ nd = Sys.time(); nd - tm  # 1.287391 mins
 
 #====================================================================
 # Results: For one year at 6 minute resolution:
-#          using data.table is ~ 32 times faster
+#          using data.table is ~ 30 times faster
 #====================================================================
 
 #====================================================================
@@ -330,11 +330,11 @@ noaa_comparison = noaa_tides |>
   dplyr::left_join(tide_differences, by = "tide_time") |>
   subset(!is.na(station_code))
 
-# Pull out cases where mine matches noaa
+# Pull out cases where mtide matches noaa
 m_tides_match = subset(noaa_comparison, noaa_ht == mtide_ht)
 rtides_match = subset(noaa_comparison, noaa_ht == rtide_ht)
 
-# Percent of time mine vs rtide matches noaa output for one month at 6 min increments
+# Percent of time mtide vs rtide matches noaa output for one month at 6 min increments
 (m_match = nrow(m_tides_match) / nrow(noaa_comparison))  # 79% of the time
 (rtide_match = nrow(rtides_match) / nrow(noaa_comparison)) # 21% of the time
 
