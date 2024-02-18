@@ -32,17 +32,15 @@ All station data, including harmonic constituents, were downloaded from
 the [NOAA CO-OPS API for Data
 Retrieval](https://api.tidesandcurrents.noaa.gov/api/prod/#products).
 Lunar node year corrections to tidal constituents for years 1700 to 2100
-were extracted from the
-[`rtide::harmonics`](https://github.com/poissonconsulting/rtide/tree/main/data)
-data originally processed by David Flater for
-[XTide](https://flaterco.com/xtide/files.html) and repackaged for use in
-the `rtide` package by Joe Thorley of Poisson Consulting Ltd. The node
+were extracted from the output file of David Flater’s [congen
+program](https://flaterco.com/xtide/files.html#harmonicsfiles). The node
 year data captures the effects of the 18.6 year lunar orbital cycle on
 amplitudes and phase of lunar tidal constituents. In order to match NOAA
 CO-OPS harmonic constituent naming conventions, some constituent names
 needed to be updated. Issues related to constituent naming conventions,
-and derivation of lunar nodal corrections are documented at:
-[`XTide`](https://flaterco.com/files/xtide/congen_input.txt).
+and derivation of lunar nodal corrections are documented by David Flater
+in the [`congen`](https://flaterco.com/files/xtide/congen_input.txt)
+program input file.
 
 For tide stations where [NOAA
 CO-OPS](https://api.tidesandcurrents.noaa.gov/api/prod/#products)
@@ -78,8 +76,8 @@ Epoch](https://tidesandcurrents.noaa.gov/datum-updates/ntde/) and the
 [North American Vertical Datum
 (NAVD88)](https://oceanservice.noaa.gov/geodesy/three-datums.html),
 suggests the need for a tide prediction package that can be easily
-updated as new datums and harmonic data became available. Minor changes
-to station data commonly occur on a quarterly schedule. Updates to
+updated as new datums and harmonic data become available. Minor changes
+to station data commonly occur on a quarterly schedule, and updates to
 datums will likely occur more frequently as climate warms and sea levels
 rise. The aim is to update `MarineTides` on a semi-regular schedule to
 reflect changes to station data pushed by
