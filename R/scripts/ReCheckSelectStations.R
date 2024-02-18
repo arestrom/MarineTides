@@ -321,17 +321,17 @@ comb_tide$difm = abs(comb_tide$tide_level - comb_tide$mtide_level)
 st_codes = unique(comb_tide$station_code)
 st_codes = paste0(paste0("'", st_codes, "'"), collapse = ", ")
 
-qry = glue::glue("delete from harms_comparison ",
-                 "where station_code in ({st_codes})")
-pg_con = pg_con_local(dbname = "harmonics")
-DBI::dbExecute(pg_con, qry)
-DBI::dbDisconnect(pg_con)
-
-# Write results to temp table in harmonics DB
-pg_con = pg_con_local(dbname = "harmonics")
-tbl = Id(schema = "public", table = "harms_comparison")
-DBI::dbWriteTable(pg_con, tbl, comb_tide, row.names = FALSE, append = TRUE, copy = TRUE)
-DBI::dbDisconnect(pg_con)
+# qry = glue::glue("delete from harms_comparison ",
+#                  "where station_code in ({st_codes})")
+# pg_con = pg_con_local(dbname = "harmonics")
+# DBI::dbExecute(pg_con, qry)
+# DBI::dbDisconnect(pg_con)
+#
+# # Write results to temp table in harmonics DB
+# pg_con = pg_con_local(dbname = "harmonics")
+# tbl = Id(schema = "public", table = "harms_comparison")
+# DBI::dbWriteTable(pg_con, tbl, comb_tide, row.names = FALSE, append = TRUE, copy = TRUE)
+# DBI::dbDisconnect(pg_con)
 
 #==================================================================================
 # Run the loop functions on first set of subordinate stations
