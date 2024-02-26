@@ -113,7 +113,7 @@ remotes::install_github("arestrom/MarineTides")
 
 All data used in this package originated with the Center for Operational
 Oceanic Products and Services (CO-OPS), National Ocean Service (NOS),
-National Oceanic andAtmospheric Administration (NOAA), USA. All tide
+National Oceanic and Atmospheric Administration (NOAA), USA. All tide
 station data were downloaded, processed, and modified by Are Strom.
 Lunar node year constituent corrections were obtained from David
 Flater’s [`XTide`](https://flaterco.com/xtide/) website. This modified
@@ -121,7 +121,7 @@ version of NOS data is not official government material. It is not
 identical to the data as originally provided, and may introduce errors
 that were not present in the source data.
 
-- ###### [David Flater](https://flaterco.com/xtide/disclaimer.html) includes the following note regarding any use of data originating from his domain:
+##### [David Flater](https://flaterco.com/xtide/disclaimer.html) includes the following note regarding any use of data originating from his domain:
 
 ##### NOT FOR NAVIGATION
 
@@ -145,7 +145,7 @@ of these data.
 The same disclaimer applies to any data downloaded, processed, and
 modified by Are Strom.
 
-- ###### [NOAA CO-OPS](https://tidesandcurrents.noaa.gov/disclaimers.html) adds the additional disclaimers below (content downloaded 2024-02-18):
+##### [NOAA CO-OPS](https://tidesandcurrents.noaa.gov/disclaimers.html) adds the additional disclaimers below (content downloaded 2024-02-18):
 
 ##### Raw Data Disclaimer
 
