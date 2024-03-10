@@ -136,6 +136,8 @@ todays_tide[, .(station_code, station_name, tide_time, tide_level_ft = tide_leve
 
 # Then entering a few more letters will allow filtering to a unique station
 subordinate_tide = tide_level("Whitney Point",
+                   start_date = "2024-03-11",
+                   end_date = "2024-03- 12",
                    data_interval = "low-only",
                    verbose = TRUE)
 #> Whitney Point, Dabob Bay is a subordinate station. The reference station, 
@@ -145,13 +147,14 @@ subordinate_tide = tide_level("Whitney Point",
 #> then time and height offset corrections are applied to obtain the 
 #> Whitney Point, Dabob Bay predictions. 
 #> 
-#> Tides will be predicted from 2024-03-10 to 2024-03-11
+#> Tides will be predicted from 2024-03-11 to 2024-03-12
 subordinate_tide[, .(station_code, station_name, tide_time, tide_level_ft = tide_level * 3.28084)]
 #>    station_code             station_name           tide_time tide_level_ft
 #>          <char>                   <char>              <POSc>         <num>
-#> 1:      9445246 Whitney Point, Dabob Bay 2024-03-10 11:59:00      3.656232
-#> 2:      9445246 Whitney Point, Dabob Bay 2024-03-11 00:01:00     -0.245409
-#> 3:      9445246 Whitney Point, Dabob Bay 2024-03-11 12:41:00      2.096615
+#> 1:      9445246 Whitney Point, Dabob Bay 2024-03-11 00:01:00    -0.2454090
+#> 2:      9445246 Whitney Point, Dabob Bay 2024-03-11 12:41:00     2.0966150
+#> 3:      9445246 Whitney Point, Dabob Bay 2024-03-12 00:45:00     1.1837560
+#> 4:      9445246 Whitney Point, Dabob Bay 2024-03-12 13:25:00     0.7557052
 ```
 
 ## Disclaimers
