@@ -123,6 +123,26 @@ To install the latest version from
 remotes::install_github("arestrom/MarineTides")
 ```
 
+## Usage
+
+```{r, message = FALSE}
+library(MarineTides)
+
+# With no arguments, outputs a data.table of today's tide at Seattle, WA in 15 minute increments.
+todays_tide = tide_level()
+todays_tide[, .(station_code, station_name, tide_time, tide_level_ft = tide_level * 3.28084)]
+
+# To search for a station, try entering part of the name. Message will include list of possible matches.
+# tide_level(tide_station = "Whitney")
+
+# Then entering a few more letters will allow filtering to a unique station
+subordinate_tide = tide_level("Whitney Point",
+                   data_interval = "low-only",
+                   verbose = TRUE)
+subordinate_tide[, .(station_code, station_name, tide_time, tide_level_ft = tide_level * 3.28084)]
+```
+
+
 ## Disclaimers
 
 All data used in this package originated with the Center for Operational

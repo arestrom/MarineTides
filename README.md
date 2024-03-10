@@ -109,6 +109,51 @@ To install the latest version from
 remotes::install_github("arestrom/MarineTides")
 ```
 
+## Usage
+
+``` r
+library(MarineTides)
+
+# With no arguments, outputs a data.table of today's tide at Seattle, WA in 15 minute increments.
+todays_tide = tide_level()
+todays_tide[, .(station_code, station_name, tide_time, tide_level_ft = tide_level * 3.28084)]
+#>      station_code station_name           tide_time tide_level_ft
+#>            <char>       <char>              <POSc>         <num>
+#>   1:      9447130      Seattle 2024-03-10 00:00:00      1.176399
+#>   2:      9447130      Seattle 2024-03-10 00:15:00      1.813860
+#>   3:      9447130      Seattle 2024-03-10 00:30:00      2.501474
+#>   4:      9447130      Seattle 2024-03-10 00:45:00      3.229126
+#>   5:      9447130      Seattle 2024-03-10 01:00:00      3.986435
+#>  ---                                                            
+#> 184:      9447130      Seattle 2024-03-11 22:45:00      3.784929
+#> 185:      9447130      Seattle 2024-03-11 23:00:00      3.212155
+#> 186:      9447130      Seattle 2024-03-11 23:15:00      2.687703
+#> 187:      9447130      Seattle 2024-03-11 23:30:00      2.223222
+#> 188:      9447130      Seattle 2024-03-11 23:45:00      1.829389
+
+# To search for a station, try entering part of the name. Message will include list of possible matches.
+# tide_level(tide_station = "Whitney")
+
+# Then entering a few more letters will allow filtering to a unique station
+subordinate_tide = tide_level("Whitney Point",
+                   data_interval = "low-only",
+                   verbose = TRUE)
+#> Whitney Point, Dabob Bay is a subordinate station. The reference station, 
+#> Seattle, is located 42.23 km. away. Tide levels are 
+#> calculated from Seattle harmonic constituents at one 
+#> minute increments. Values for high and low tide are extracted, 
+#> then time and height offset corrections are applied to obtain the 
+#> Whitney Point, Dabob Bay predictions. 
+#> 
+#> Tides will be predicted from 2024-03-10 to 2024-03-11
+subordinate_tide[, .(station_code, station_name, tide_time, tide_level_ft = tide_level * 3.28084)]
+#>    station_code             station_name           tide_time tide_level_ft
+#>          <char>                   <char>              <POSc>         <num>
+#> 1:      9445246 Whitney Point, Dabob Bay 2024-03-10 11:59:00      3.656232
+#> 2:      9445246 Whitney Point, Dabob Bay 2024-03-11 00:01:00     -0.245409
+#> 3:      9445246 Whitney Point, Dabob Bay 2024-03-11 12:41:00      2.096615
+```
+
 ## Disclaimers
 
 All data used in this package originated with the Center for Operational
