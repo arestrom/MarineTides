@@ -1,7 +1,7 @@
 Package: MarineTides
 Type: Package
 Title: Tide Prediction
-Version: 0.1-1
+Version: 0.2-1
 Authors@R: as.person("Are Strom <are.strom@gmail.com> [aut, cre]")
 Maintainer: Are Strom <are.strom@gmail.com>
 Description: Generates tide predictions using harmonics data obtained from the NOAA CO-OPS
