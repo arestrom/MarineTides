@@ -39,4 +39,7 @@ if(getRversion() >= "2.15.1")  utils::globalVariables(c("timezone",
                                                         "height_offset_low_tide",
                                                         "offset_level",
                                                         "offset_time",
-                                                        "height_offset_type"))
+                                                        "height_offset_type",
+                                                        "m",
+                                                        "tide_level_ft",
+                                                        "ft"))

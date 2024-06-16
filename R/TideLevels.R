@@ -142,10 +142,10 @@ tide_level = function(tide_station = "Seattle",
     stop("Tide unit argument must be either meters or feet")
   }
   if ( tide_unit == "meters" ) {
-    tide_out[, tide_level := set_units(tide_level, m)]
+    tide_out[, tide_level := units::set_units(tide_level, m)]
   } else {
-    tide_out[, tide_level := set_units(tide_level, m)]
-    tide_out[, tide_level_ft := set_units(tide_level, ft)]
+    tide_out[, tide_level := units::set_units(tide_level, m)]
+    tide_out[, tide_level_ft := units::set_units(tide_level, ft)]
     tide_out = tide_out[, list(station_code, station_name,
                                reference_station_code,
                                tide_type, tide_time,
