@@ -12,8 +12,9 @@
 #' @param end_date A character field for the end date of the tide prediction time-span
 #' @param data_interval A character value for the time increment between predictions.
 #'   Allowable options include \code{1-min 6-min, 15-min, 30-min, 60-min, high-low, high-only, low-only}
-#' @param timezone Typically the timezone of the \code{tide_station}, but can also be set manually.
-#' @param verbose A boolean requesting additional information be printed to the R console.
+#' @param tide_unit A character value for the tide level unit. Allowable options are \code{meters, feet}
+#' @param timezone Typically the timezone of the \code{tide_station}, but can also be set manually
+#' @param verbose A boolean requesting additional information be printed to the R console
 #' @param harms Harmonics data
 #'
 #' @details
@@ -56,7 +57,7 @@
 #'   \item{reference_station_code}{Station ID for the reference station (chr).}
 #'   \item{tide_type}{Harmonic or Subordinate (chr).}
 #'   \item{tide_time}{Datetime of the prediction (time).}
-#'   \item{MLLW}{Tide level in meters (dbl).}
+#'   \item{tide_level}{Tide level in specified units, either meters or feet (dbl).}
 #' }
 #'
 #' @export
@@ -64,6 +65,7 @@ tide_level = function(tide_station = "Seattle",
                       start_date = Sys.Date(),
                       end_date = Sys.Date() + 1,
                       data_interval = "15-min",
+                      tide_unit = "meters",
                       timezone = NULL,
                       verbose = FALSE,
                       harms = MarineTides::harmonics) {
@@ -134,6 +136,20 @@ tide_level = function(tide_station = "Seattle",
                                  reference_station_code,
                                  tide_type, tide_time, tide_level)]
     tide_out = tide_pred
+  }
+  # Tide_unit
+  if ( !tide_unit %in% c("meters", "feet") ) {
+    stop("Tide unit argument must be either meters or feet")
+  }
+  if ( tide_unit == "meters" ) {
+    tide_out[, tide_level := units::set_units(tide_level, m)]
+  } else {
+    tide_out[, tide_level := units::set_units(tide_level, m)]
+    tide_out[, tide_level_ft := units::set_units(tide_level, ft)]
+    tide_out = tide_out[, list(station_code, station_name,
+                               reference_station_code,
+                               tide_type, tide_time,
+                               tide_level = tide_level_ft)]
   }
   tide_out = tide_out[inrange(tide_time, min(report_dts), max(report_dts))]
   return(tide_out)

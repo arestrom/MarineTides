@@ -130,7 +130,7 @@ library(MarineTides)
 
 # With no arguments, outputs a data.table of today's tide at Seattle, WA in 15 minute increments.
 todays_tide = tide_level()
-todays_tide[, .(station_code, station_name, tide_time, tide_level_ft = tide_level * 3.28084)]
+todays_tide[, .(station_code, station_name, tide_time, tide_level)]
 
 # To search for a station, try entering part of the name. Message will include list of possible matches.
 # tide_level(tide_station = "Whitney")
@@ -138,10 +138,11 @@ todays_tide[, .(station_code, station_name, tide_time, tide_level_ft = tide_leve
 # Then entering a few more letters will allow filtering to a unique station
 subordinate_tide = tide_level("Whitney Point",
                    start_date = "2024-03-11",
-                   end_date = "2024-03- 12",
+                   end_date = "2024-03-12",
                    data_interval = "low-only",
+                   tide_unit = "feet",
                    verbose = TRUE)
-subordinate_tide[, .(station_code, station_name, tide_time, tide_level_ft = tide_level * 3.28084)]
+subordinate_tide[, .(station_code, station_name, tide_time, tide_level)]
 ```
 
 

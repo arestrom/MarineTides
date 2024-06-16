@@ -116,20 +116,20 @@ library(MarineTides)
 
 # With no arguments, outputs a data.table of today's tide at Seattle, WA in 15 minute increments.
 todays_tide = tide_level()
-todays_tide[, .(station_code, station_name, tide_time, tide_level_ft = tide_level * 3.28084)]
-#>      station_code station_name           tide_time tide_level_ft
-#>            <char>       <char>              <POSc>         <num>
-#>   1:      9447130      Seattle 2024-03-10 00:00:00      1.176399
-#>   2:      9447130      Seattle 2024-03-10 00:15:00      1.813860
-#>   3:      9447130      Seattle 2024-03-10 00:30:00      2.501474
-#>   4:      9447130      Seattle 2024-03-10 00:45:00      3.229126
-#>   5:      9447130      Seattle 2024-03-10 01:00:00      3.986435
-#>  ---                                                            
-#> 184:      9447130      Seattle 2024-03-11 22:45:00      3.784929
-#> 185:      9447130      Seattle 2024-03-11 23:00:00      3.212155
-#> 186:      9447130      Seattle 2024-03-11 23:15:00      2.687703
-#> 187:      9447130      Seattle 2024-03-11 23:30:00      2.223222
-#> 188:      9447130      Seattle 2024-03-11 23:45:00      1.829389
+todays_tide[, .(station_code, station_name, tide_time, tide_level)]
+#>      station_code station_name           tide_time   tide_level
+#>            <char>       <char>              <POSc>      <units>
+#>   1:      9447130      Seattle 2024-06-15 00:00:00 3.320440 [m]
+#>   2:      9447130      Seattle 2024-06-15 00:15:00 3.336625 [m]
+#>   3:      9447130      Seattle 2024-06-15 00:30:00 3.338127 [m]
+#>   4:      9447130      Seattle 2024-06-15 00:45:00 3.325300 [m]
+#>   5:      9447130      Seattle 2024-06-15 01:00:00 3.298657 [m]
+#>  ---                                                           
+#> 188:      9447130      Seattle 2024-06-16 22:45:00 2.594660 [m]
+#> 189:      9447130      Seattle 2024-06-16 23:00:00 2.683913 [m]
+#> 190:      9447130      Seattle 2024-06-16 23:15:00 2.772680 [m]
+#> 191:      9447130      Seattle 2024-06-16 23:30:00 2.859218 [m]
+#> 192:      9447130      Seattle 2024-06-16 23:45:00 2.941645 [m]
 
 # To search for a station, try entering part of the name. Message will include list of possible matches.
 # tide_level(tide_station = "Whitney")
@@ -137,8 +137,9 @@ todays_tide[, .(station_code, station_name, tide_time, tide_level_ft = tide_leve
 # Then entering a few more letters will allow filtering to a unique station
 subordinate_tide = tide_level("Whitney Point",
                    start_date = "2024-03-11",
-                   end_date = "2024-03- 12",
+                   end_date = "2024-03-12",
                    data_interval = "low-only",
+                   tide_unit = "feet",
                    verbose = TRUE)
 #> Whitney Point, Dabob Bay is a subordinate station. The reference station, 
 #> Seattle, is located 42.23 km. away. Tide levels are 
@@ -148,13 +149,13 @@ subordinate_tide = tide_level("Whitney Point",
 #> Whitney Point, Dabob Bay predictions. 
 #> 
 #> Tides will be predicted from 2024-03-11 to 2024-03-12
-subordinate_tide[, .(station_code, station_name, tide_time, tide_level_ft = tide_level * 3.28084)]
-#>    station_code             station_name           tide_time tide_level_ft
-#>          <char>                   <char>              <POSc>         <num>
-#> 1:      9445246 Whitney Point, Dabob Bay 2024-03-11 00:01:00    -0.2454090
-#> 2:      9445246 Whitney Point, Dabob Bay 2024-03-11 12:41:00     2.0966150
-#> 3:      9445246 Whitney Point, Dabob Bay 2024-03-12 00:45:00     1.1837560
-#> 4:      9445246 Whitney Point, Dabob Bay 2024-03-12 13:25:00     0.7557052
+subordinate_tide[, .(station_code, station_name, tide_time, tide_level)]
+#>    station_code             station_name           tide_time      tide_level
+#>          <char>                   <char>              <POSc>         <units>
+#> 1:      9445246 Whitney Point, Dabob Bay 2024-03-11 00:01:00 -0.2454090 [ft]
+#> 2:      9445246 Whitney Point, Dabob Bay 2024-03-11 12:41:00  2.0966149 [ft]
+#> 3:      9445246 Whitney Point, Dabob Bay 2024-03-12 00:45:00  1.1837560 [ft]
+#> 4:      9445246 Whitney Point, Dabob Bay 2024-03-12 13:25:00  0.7557052 [ft]
 ```
 
 ## Disclaimers

@@ -11,7 +11,7 @@ A data.frame:
   \item{reference_station_code}{Station ID for the reference station (chr).}
   \item{tide_type}{Harmonic or Subordinate (chr).}
   \item{tide_time}{Datetime of the prediction (time).}
-  \item{MLLW}{Tide level in meters (dbl).}
+  \item{tide_level}{Tide level in specified units, either meters or feet (dbl).}
 }
 }
 \usage{
@@ -20,6 +20,7 @@ tide_level(
   start_date = Sys.Date(),
   end_date = Sys.Date() + 1,
   data_interval = "15-min",
+  tide_unit = "meters",
   timezone = NULL,
   verbose = FALSE,
   harms = MarineTides::harmonics
@@ -35,9 +36,11 @@ tide_level(
 \item{data_interval}{A character value for the time increment between predictions.
 Allowable options include \code{1-min 6-min, 15-min, 30-min, 60-min, high-low, high-only, low-only}}
 
-\item{timezone}{Typically the timezone of the \code{tide_station}, but can also be set manually.}
+\item{tide_unit}{A character value for the tide level unit. Allowable options are \code{meters, feet}}
 
-\item{verbose}{A boolean requesting additional information be printed to the R console.}
+\item{timezone}{Typically the timezone of the \code{tide_station}, but can also be set manually}
+
+\item{verbose}{A boolean requesting additional information be printed to the R console}
 
 \item{harms}{Harmonics data}
 }
