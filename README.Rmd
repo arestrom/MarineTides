@@ -138,9 +138,9 @@ todays_tide[, .(station_code, station_name, tide_time, tide_level)]
 # Then entering a few more letters will allow filtering to a unique station
 subordinate_tide = tide_level("Whitney Point",
                    start_date = "2024-03-11",
-                   end_date = "2024-03- 12",
+                   end_date = "2024-03-12",
                    data_interval = "low-only",
-                   tide_level = "feet",
+                   tide_unit = "feet",
                    verbose = TRUE)
 subordinate_tide[, .(station_code, station_name, tide_time, tide_level)]
 ```
